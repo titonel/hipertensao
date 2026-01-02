@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-pills text-danger me-2"></i>Farmácia Clínica</h2>
+    <button class="btn btn-success" onclick="abrirModalNovo()">
+        <i class="fas fa-plus me-2"></i>Novo Medicamento
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body table-responsive">
+        <table class="table table-sm table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Classe</th>
+                    <th>Princípio Ativo</th>
+                    <th>Dose Padrão</th>
+                    <th>Nomes Comerciais</th>
+                    <th>Status</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in medicamentos %}
+                <tr>
+                    <td><small class="fw-bold text-muted">{{ m.classe }}</small></td>
+                    <td>{{ m.principio_ativo }}</td>
+                    <td>{{ m.dose_padrao }}</td>
+                    <td><small class="text-muted fst-italic">{{ m.nomes_comerciais }}</small></td>
+                    <td>
+                        {% if m.ativo %}
+                            <i class="fas fa-check-circle text-success" title="Ativo"></i>
+                        {% else %}
+                            <i class="fas fa-times-circle text-danger" title="Inativo"></i>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-secondary"
+                                onclick="editarMedicamento('{{ m.id }}', '{{ m.classe }}', '{{ m.principio_ativo }}', '{{ m.dose_padrao }}', '{{ m.nomes_comerciais }}', '{{ m.ativo }}')">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMed" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalTitulo">Novo Medicamento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form action="{% url 'salvar_medicamento' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" name="medicamento_id" id="medicamento_id">
+
+                    <div class="mb-3">
+                        <label class="form-label">Classe Farmacológica</label>
+                        <div class="input-group">
+                            <select name="classe" id="classe" class="form-select" onchange="verificarOutros(this)">
+                                <option value="" selected disabled>Selecione a Classe...</option>
+                                {% for c in classes_disponiveis %}
+                                    <option value="{{ c }}">{{ c }}</option>
+                                {% endfor %}
+                                <option value="OUTROS">--- Cadastrar Nova Classe ---</option>
+                            </select>
+                        </div>
+                        <input type="text" name="classe_manual" id="classe_manual" class="form-control mt-2 d-none" placeholder="Digite o nome da nova classe">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Princípio Ativo</label>
+                        <input type="text" name="principio_ativo" id="principio_ativo" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Dose / Faixa Terapêutica</label>
+                        <input type="text" name="dose_padrao" id="dose_padrao" class="form-control" required placeholder="Ex: 50-100mg">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nomes Comerciais</label>
+                        <input type="text" name="nomes_comerciais" id="nomes_comerciais" class="form-control" placeholder="Separados por vírgula">
+                    </div>
+
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="ativo" id="ativo" checked>
+                        <label class="form-check-label">Disponível para Prescrição</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalNovo() {
+        document.getElementById('modalTitulo').innerText = "Novo Medicamento";
+        document.getElementById('medicamento_id').value = "";
+        document.getElementById('classe').value = "";
+        document.getElementById('principio_ativo').value = "";
+        document.getElementById('dose_padrao').value = "";
+        document.getElementById('nomes_comerciais').value = "";
+        document.getElementById('ativo').checked = true;
+
+        new bootstrap.Modal(document.getElementById('modalMed')).show();
+    }
+
+    // Função simplificada passando parâmetros direto (evita criar outra API)
+    function editarMedicamento(id, classe, principio, dose, nomes, ativo) {
+        document.getElementById('modalTitulo').innerText = "Editar Medicamento";
+        document.getElementById('medicamento_id').value = id;
+
+        // Tenta selecionar a classe no dropdown
+        let select = document.getElementById('classe');
+        select.value = classe;
+
+        // Se a classe não existir no dropdown (foi criada manualmente ou alterada), seleciona OUTROS?
+        // Por simplificação, assumimos que as classes existem pois carregamos do banco.
+
+        document.getElementById('principio_ativo').value = principio;
+        document.getElementById('dose_padrao').value = dose;
+        document.getElementById('nomes_comerciais').value = nomes;
+
+        // Python True/False vira string "True"/"False" ou booleano no JS dependendo do parse
+        // No Django template, True vira 'True'.
+        document.getElementById('ativo').checked = (ativo === 'True' || ativo === true);
+
+        new bootstrap.Modal(document.getElementById('modalMed')).show();
+    }
+
+    function verificarOutros(select) {
+        const inputManual = document.getElementById('classe_manual');
+        if (select.value === 'OUTROS') {
+            inputManual.classList.remove('d-none');
+            inputManual.required = true;
+            select.name = ""; // Remove name do select para enviar o input manual
+            inputManual.name = "classe"; // Input manual assume o envio
+        } else {
+            inputManual.classList.add('d-none');
+            inputManual.required = false;
+            select.name = "classe";
+            inputManual.name = "classe_manual";
+        }
+    }
+</script>
+{% endblock %}

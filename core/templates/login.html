@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white text-center py-4">
+                <h4 class="mb-0 fw-bold"><i class="fas fa-heartbeat me-2"></i>L.C. Hipertensão</h4>
+                <small>Acesso Restrito - AME Caraguatatuba</small>
+            </div>
+
+            <div class="card-body p-4">
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" action="{% url 'login' %}">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label text-muted fw-bold">E-mail</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-envelope text-primary"></i></span>
+                            <input type="email" class="form-control form-control-lg" id="id_username" name="username"
+                                   required autofocus placeholder="seu.nome@amecaragua.org.br">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="id_password" class="form-label text-muted fw-bold">Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-lock text-primary"></i></span>
+                            <input type="password" class="form-control form-control-lg" id="id_password" name="password"
+                                   required placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm">
+                            Entrar <i class="fas fa-sign-in-alt ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-3 border-top pt-3">
+                    <p class="small text-muted mb-0">Esqueceu sua senha?</p>
+                    <a href="#" class="text-decoration-none fw-bold" onclick="alert('Funcionalidade em desenvolvimento. Contate o TI.')">Recuperar Acesso</a>
+                </div>
+            </div>
+
+            <div class="card-footer text-center bg-light text-muted py-3">
+                <small>&copy; 2026 AME Caraguatatuba</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

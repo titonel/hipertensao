@@ -1,0 +1,30 @@
+hipertensao/                (Pasta Raiz)
+├── manage.py               (Executor)
+├── hipertensao/            (Configurações do Projeto)
+│   ├── __init__.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── core/                   (App Principal)
+    ├── __init__.py
+    ├── admin.py
+    ├── apps.py
+    ├── models.py           (Banco de Dados)
+    ├── forms.py            (Validações e Formulários)
+    ├── views.py            (Lógica e Regras de Negócio)
+    ├── urls.py             (Rotas Internas)
+    ├── management/
+    │   └── commands/
+    │       └── setup_db.py (Script de Carga Inicial)
+    ├── static/             (CSS e JS)
+    │   ├── css/
+    │   └── js/
+    └── templates/          (HTML)
+        ├── base.html
+        ├── index.html
+        ├── login.html
+        ├── pacientes.html
+        ├── atendimento.html
+        ├── gestao_usuarios.html
+        ├── gestao_medicamentos.html
+        └── trocar_senha.html

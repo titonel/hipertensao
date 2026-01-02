@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users text-primary me-2"></i>Gestão de Pacientes</h2>
+    <button class="btn btn-success" onclick="abrirModalNovo()">
+        <i class="fas fa-plus me-2"></i>Novo Paciente
+    </button>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome</th>
+                        <th>CPF</th>
+                        <th>Sexo</th>
+                        <th>Idade</th>
+                        <th>Município</th>
+                        <th>Telefone</th>
+                        <th>Status</th>
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pacientes %}
+                    <tr>
+                        <td class="fw-bold">{{ p.nome }}</td>
+                        <td>{{ p.cpf }}</td>
+                        <td>
+                            {% if p.sexo == 'M' %}
+                                <i class="fas fa-mars text-primary" title="Masculino"></i>
+                            {% elif p.sexo == 'F' %}
+                                <i class="fas fa-venus text-danger" title="Feminino"></i>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>{{ p.idade }} anos</td>
+                        <td>{{ p.municipio }}</td>
+                        <td>{{ p.telefone }}</td>
+                        <td>
+                            {% if p.ativo %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'atendimento' %}?id={{ p.id }}" class="btn btn-sm btn-outline-danger me-1" title="Registrar PA">
+                                <i class="fas fa-heartbeat"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-primary" onclick="editarPaciente({{ p.id }})" title="Editar Cadastro">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">Nenhum paciente cadastrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPaciente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalTitulo">Novo Paciente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="{% url 'salvar_paciente' %}" method="POST">
+                {% csrf_token %} <div class="modal-body">
+                    <input type="hidden" name="paciente_id" id="paciente_id">
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome Completo</label>
+                            <input type="text" class="form-control" name="nome" id="nome" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Data Nasc.</label>
+                            <input type="date" class="form-control" name="data_nascimento" id="data_nascimento" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label text-primary fw-bold">Início L.C.</label>
+                            <input type="date" class="form-control border-primary" name="data_insercao" id="data_insercao" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">CPF</label>
+                            <input type="text" class="form-control" name="cpf" id="cpf" maxlength="14">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Sexo</label>
+                            <select class="form-select" name="sexo" id="sexo" required>
+                                <option value="" selected disabled>Selecione...</option>
+                                <option value="M">Masculino</option>
+                                <option value="F">Feminino</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Etnia/Cor</label>
+                            <select class="form-select" name="etnia" id="etnia" required>
+                                <option value="" selected disabled>Selecione...</option>
+                                <option value="Branca">Branca</option>
+                                <option value="Parda">Parda</option>
+                                <option value="Negra">Negra</option>
+                                <option value="Indígena">Indígena</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Município</label>
+                            <select class="form-select" name="municipio" id="municipio">
+                                <option value="Caraguatatuba">Caraguatatuba</option>
+                                <option value="Ubatuba">Ubatuba</option>
+                                <option value="São Sebastião">São Sebastião</option>
+                                <option value="Ilhabela">Ilhabela</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" class="form-control" name="telefone" id="telefone">
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" name="ativo" id="ativo" checked>
+                        <label class="form-check-label" for="ativo">Paciente Ativo na Linha de Cuidado</label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar Paciente</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalNovo() {
+        document.getElementById('modalTitulo').innerText = "Novo Paciente";
+        document.getElementById('paciente_id').value = "";
+        document.getElementById('nome').value = "";
+        document.getElementById('cpf').value = "";
+        document.getElementById('sexo').value = "";
+        document.getElementById('etnia').value = "";
+        document.getElementById('data_nascimento').value = "";
+        document.getElementById('telefone').value = "";
+        document.getElementById('ativo').checked = true;
+
+        const hoje = new Date().toISOString().split('T')[0];
+        document.getElementById('data_insercao').value = hoje;
+
+        new bootstrap.Modal(document.getElementById('modalPaciente')).show();
+    }
+
+    function editarPaciente(id) {
+        // Ajuste da URL para o padrão Django (api/paciente/ID/)
+        fetch(`/api/paciente/${id}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('modalTitulo').innerText = "Editar Paciente";
+                document.getElementById('paciente_id').value = data.id;
+                document.getElementById('nome').value = data.nome;
+                document.getElementById('cpf').value = data.cpf;
+                document.getElementById('sexo').value = data.sexo;
+                document.getElementById('etnia').value = data.etnia;
+                document.getElementById('data_nascimento').value = data.data_nascimento;
+                document.getElementById('municipio').value = data.municipio;
+                document.getElementById('telefone').value = data.telefone;
+                document.getElementById('data_insercao').value = data.data_insercao;
+                document.getElementById('ativo').checked = data.ativo;
+
+                new bootstrap.Modal(document.getElementById('modalPaciente')).show();
+            })
+            .catch(error => console.error('Erro:', error));
+    }
+</script>
+{% endblock %}

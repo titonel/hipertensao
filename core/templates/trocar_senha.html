@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card shadow border-0">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="fas fa-key me-2"></i>Alteração de Senha Obrigatória</h5>
+            </div>
+            <div class="card-body p-4">
+
+                <p class="text-muted">
+                    Por motivos de segurança, você precisa definir uma nova senha pessoal antes de continuar acessando o sistema.
+                </p>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" action="{% url 'trocar_senha' %}">
+                    {% csrf_token %} <div class="mb-3">
+                        <label class="form-label fw-bold">Nova Senha</label>
+                        <input type="password" name="nova_senha" class="form-control" required minlength="6" placeholder="Mínimo 6 caracteres">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Confirme a Nova Senha</label>
+                        <input type="password" name="confirmacao" class="form-control" required placeholder="Repita a senha">
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar Nova Senha
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
