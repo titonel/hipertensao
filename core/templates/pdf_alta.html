@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Alta - {{ paciente.nome }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 1cm; /* Margem física da impressora */
+
+            /* --- AJUSTE DAS MOLDURAS (COORDINATES SYSTEM) --- */
+
+            /* 1. CABEÇALHO:
+               - Topo: 0.5cm
+               - Altura: 3.5cm (Reduzi para diminuir espaço sobrando)
+               - Fim visual: 4.0cm da página
+            */
+            @frame header_frame {
+                -pdf-frame-content: header_content;
+                left: 1cm; width: 19cm; top: 0.5cm; height: 3.5cm;
+            }
+
+            /* 2. RODAPÉ:
+               - Aumentei a altura para 3cm para a imagem crescer
+            */
+            @frame footer_frame {
+                -pdf-frame-content: footer_content;
+                left: 1cm; width: 19cm; top: 26.5cm; height: 3cm;
+            }
+
+            /* 3. CONTEÚDO (TEXTO):
+               - Topo: 4.0cm (Subi de 5.5cm para 4.0cm -> ELIMINA O ESPAÇO DE 2CM)
+               - Altura: Ajustada para não bater no rodapé novo
+            */
+            @frame content_frame {
+                left: 1cm; width: 19cm; top: 4.2cm; height: 21.8cm;
+            }
+        }
+
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #000; }
+
+        /* Centraliza os containers das imagens */
+        #header_content, #footer_content { text-align: center; }
+
+        /* --- IMAGENS --- */
+
+        .img-fixa-header {
+            /* Cabeçalho focado em altura */
+            height: 3.2cm;
+            width: auto;
+        }
+
+        .img-fixa-footer {
+            /* MUDANÇA: Rodapé focado em LARGURA para ficar grande */
+            width: 100%;       /* Ocupa a largura toda da página */
+            height: auto;      /* Altura proporcional */
+            max-height: 2.5cm; /* Trava para não estourar o frame */
+        }
+
+        /* Classes de Texto */
+        .titulo-principal { color: #004587; font-size: 14pt; font-weight: bold; text-align: center; margin-bottom: 5px; margin-top: 0px; }
+        .dados-paciente { text-align: center; font-size: 10pt; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+
+        .bloco { border: 1px solid #000; padding: 8px; margin-bottom: 5px; background-color: #fcfcfc; }
+        .bloco-titulo { color: #F26522; font-size: 11pt; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 5px; }
+        .subtitulo { color: #004587; font-weight: bold; font-size: 10pt; margin-top: 5px; margin-bottom: 2px; }
+
+        /* Tabelas compactas */
+        table { width: 100%; border-collapse: collapse; margin-top: 2px; }
+        td { vertical-align: top; padding: 3px; border: none; }
+
+        .tab-meds { width: 100%; border: 1px solid #999; margin-top: 2px; }
+        .tab-meds th { background-color: #004587; color: #fff; padding: 3px; text-align: left; font-size: 9pt; }
+        .tab-meds td { border: 1px solid #ccc; padding: 3px; font-size: 9pt; }
+
+        /* Assinatura: Proteção contra quebra de página errada */
+        .container-assinatura {
+            page-break-inside: avoid; /* Tenta não quebrar a assinatura no meio */
+            margin-top: 15px;
+            width: 100%;
+        }
+        .linha-assinatura {
+            border-top: 1px solid #000; width: 70%; margin: 0 auto;
+            text-align: center; font-size: 9pt; padding-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="header_content">
+        {% if header_b64 %}
+            <img src="data:image/png;base64,{{ header_b64 }}" class="img-fixa-header" />
+        {% else %}
+            <h1>AME CARAGUATATUBA</h1>
+        {% endif %}
+    </div>
+
+    <div id="footer_content">
+        {% if footer_b64 %}
+            <img src="data:image/png;base64,{{ footer_b64 }}" class="img-fixa-footer" />
+        {% else %}
+            <hr>
+        {% endif %}
+        <div style="text-align: center; font-size: 7pt; color: #777;">
+            Linha de Cuidado de Hipertensão Arterial
+        </div>
+    </div>
+
+    <div class="titulo-principal">CONTRARREFERÊNCIA E ALTA</div>
+
+    <div class="dados-paciente">
+        <strong>Paciente:</strong> {{ paciente.nome }} &nbsp;|&nbsp;
+        <strong>CPF:</strong> {{ paciente.cpf }} &nbsp;|&nbsp;
+        <strong>Nasc:</strong> {{ paciente.data_nascimento|date:"d/m/Y" }}
+    </div>
+
+    <div class="bloco">
+        <div class="bloco-titulo">BLOCO 1: CONTRARREFERÊNCIA (UBS)</div>
+        <div style="font-size: 9pt;">Prezado colega, este paciente completou o ciclo investigativo e de estabilização. Seguem dados para cuidado longitudinal a ser realizado na Unidade Básica de Saúde.</div>
+
+        <div class="subtitulo">1. Diagnóstico</div>
+        <div style="font-size: 9pt;">(X) Hipertensão Primária &nbsp;&nbsp; ( ) Secundária &nbsp;&nbsp; ( ) Resistente</div>
+
+        <div class="subtitulo">2. Últimos Dados Clínicos (Alta)</div>
+        <table style="width: 100%">
+            <tr>
+                <td style="border: 1px solid #ddd;"><strong>PA:</strong> {{ ultima_pa }} mmHg</td>
+                <td style="border: 1px solid #ddd;"><strong>IMC:</strong> {{ ultimo_imc }} kg/m²</td>
+                <td style="border: 1px solid #ddd;"><strong>TFG:</strong> ____ ml/min</td>
+            </tr>
+        </table>
+
+        <div class="subtitulo">3. Meta Pressórica Alvo</div>
+        <div style="font-size: 9pt;">(X) PA &lt; 140/90 mmHg (Risco Baixo/Intermediário) &nbsp;&nbsp; ( ) PA &lt; 130/80 mmHg (Alto Risco/DRC/DM)</div>
+
+        <div class="subtitulo">4. Regime de Alta</div>
+        <table class="tab-meds">
+            <thead>
+                <tr><th width="40%">Fármaco</th><th width="30%">Dose</th><th width="30%">Posologia</th></tr>
+            </thead>
+            <tbody>
+                {% for med in medicamentos %}
+                <tr><td>{{ med.principio_ativo }}</td><td>{{ med.dose_padrao }}</td><td>( )M ( )T ( )N</td></tr>
+                {% empty %}
+                <tr><td colspan="3" align="center">Sem medicação.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="subtitulo" style="margin-top: 5px;">5. Gatilhos de Retorno</div>
+        <div style="font-size: 8pt;">• PA > 150/100 mantida. • Queda TFG > 30%. • Novos eventos CV.</div>
+    </div>
+
+    <div class="container-assinatura">
+        <div class="linha-assinatura">
+            <strong>{{ usuario.get_full_name|default:"Profissional AME" }}</strong><br>
+            Equipe Médica - AME Caraguatatuba
+        </div>
+    </div>
+
+    <pdf:nextpage />
+
+    <div class="titulo-principal">ORIENTAÇÕES (VIA DO PACIENTE)</div>
+
+    <div class="dados-paciente">
+        <strong>Paciente:</strong> {{ paciente.nome }} &nbsp;|&nbsp;
+        <strong>Data:</strong> {{ hoje|date:"d/m/Y" }}
+    </div>
+
+    <div class="bloco">
+        <div class="bloco-titulo">BLOCO 2: MINHA SAÚDE EM DIA</div>
+        <div style="font-size: 9pt;">Entregue a folha anterior na UBS e guarde esta via com você. Você deverá tomar sua medicação nos dias e horários assinalados mesmo se não sentir nenhum sintoma.</div>
+
+        <div class="subtitulo">📋 Suas Metas</div>
+        <div style="font-size: 9pt;">Sua pressão ideal deve ser menor ou igual a: <strong>140 por 90</strong>.</div>
+
+        <div class="subtitulo">💊 Medicamentos</div>
+        <ul style="margin: 0; padding-left: 20px; font-size: 9pt;">
+            {% for med in medicamentos %}<li>{{ med.principio_ativo }} ({{ med.dose_padrao }})</li>{% endfor %}
+        </ul>
+
+        <div class="subtitulo">🥗 Cuidados Diários</div>
+        <table style="width: 100%">
+            <tr>
+                <td><strong>Sal:</strong> Evite sal, temperos prontos, embutidos e industrializados.<br><strong>Peso:</strong> Controle o peso.</td>
+                <td><strong>Exercício:</strong> Caminhe 30min, 3x por semana.<br><strong>Vícios:</strong> Evite cigarro e álcool.</td>
+            </tr>
+        </table>
+
+        <div class="subtitulo">🚨 Sinais de Alerta (Vá ao PS/UPA)</div>
+        <div style="color: red; font-weight: bold; font-size: 9pt;">Dor no peito, falta de ar súbita, dor de cabeça muito forte ou fraqueza.</div>
+    </div>
+
+    <div style="margin-top: 15px; font-size: 8pt; border: 1px dashed #999; padding: 5px;">
+        <strong>Declaração:</strong> Declaro que recebi a contrarreferência e as orientações. Comprometo-me a agendar consulta na UBS da minha área de residência.<br>
+        <em>Caraguatatuba, {{ hoje|date:"d" }} de {{ hoje|date:"F" }} de {{ hoje|date:"Y" }}.</em>
+    </div>
+
+    <div class="container-assinatura">
+        <div class="linha-assinatura">
+            <strong>{{ paciente.nome }}</strong><br>
+            Assinatura do Paciente / Responsável
+        </div>
+    </div>
+
+</body>
+</html>

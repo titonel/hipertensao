@@ -44,6 +44,7 @@ class Paciente(models.Model):
     etnia = models.CharField(max_length=20, choices=ETNIA_CHOICES)
     data_nascimento = models.DateField()
     data_insercao = models.DateField(default=date.today)
+    data_alta = models.DateField(null=True, blank=True)
 
     municipio = models.CharField(max_length=100, default='Caraguatatuba')
     telefone = models.CharField(max_length=20, blank=True)

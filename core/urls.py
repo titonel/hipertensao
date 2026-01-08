@@ -25,4 +25,5 @@ urlpatterns = [
     path('medicamentos/', views.gestao_medicamentos, name='gestao_medicamentos'),
     path('medicamento/salvar', views.salvar_medicamento, name='salvar_medicamento'),
     path('api/usuario/<int:id>/', views.api_usuario, name='api_usuario'),
+    path('paciente/alta/<int:id>/', views.gerar_alta, name='gerar_alta'),
 ]

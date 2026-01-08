@@ -1,14 +1,41 @@
+import os
+import base64  # <--- ADICIONE ESTA LINHA AQUI
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.staticfiles import finders
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 from django.db.models import Q, Avg, Count, F, ExpressionWrapper, fields
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from django.conf import settings
 from datetime import datetime, date
 from .models import Paciente, Afericao, Medicamento, Usuario
 from .forms import PacienteForm, UsuarioForm
 
+
+# Função auxiliar para converter imagem em Base64
+def get_base64_image(filename):
+    """Lê o arquivo físico e retorna o código Base64"""
+    # Monta o caminho manualmente
+    path = os.path.join(settings.BASE_DIR, 'core', 'static', 'img', filename)
+
+    # Debug no terminal
+    if not os.path.exists(path):
+        print(f"ERRO B64: Arquivo não existe: {path}")
+        return None
+
+    try:
+        with open(path, "rb") as image_file:
+            # Lê binário, converte para b64, decodifica para string utf-8
+            encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+            print(f"SUCESSO B64: Imagem {filename} carregada ({len(encoded_string)} bytes)")
+            return encoded_string
+    except Exception as e:
+        print(f"ERRO B64 ao ler arquivo: {e}")
+        return None
 
 # --- Autenticação ---
 
@@ -31,6 +58,39 @@ def login_view(request):
             messages.error(request, 'E-mail ou senha inválidos.')
     return render(request, 'login.html')
 
+# Função utilitária para lidar com imagens estáticas no PDF - ROBUSTA para Windows/Linux/Dev/Prod
+def link_callback(uri, rel):
+    """
+    Abordagem 'Nuclear': Identifica o arquivo pelo nome e força o caminho absoluto.
+    Isso elimina qualquer erro de barra invertida, url relativa ou static_url.
+    """
+    # Pega apenas o nome do arquivo (ex: 'header.png' de '/static/img/header.png')
+    filename = os.path.basename(uri)
+
+    # Lista de arquivos conhecidos que precisamos garantir
+    imagens_sistema = ['header.png', 'footer.png']
+
+    path = None
+
+    # 1. Se for uma das nossas imagens de layout, forçamos o caminho fixo
+    if filename in imagens_sistema:
+        path = os.path.join(settings.BASE_DIR, 'core', 'static', 'img', filename)
+
+    # 2. Se não for, tentamos a lógica padrão para MEDIA (uploads do paciente, se houver)
+    elif settings.MEDIA_URL in uri:
+        media_name = uri.split(settings.MEDIA_URL)[-1]
+        path = os.path.join(settings.MEDIA_ROOT, media_name)
+
+    # 3. Se ainda não achou, tenta montar o caminho estático genérico
+    else:
+        path = os.path.join(settings.BASE_DIR, 'core', 'static', 'img', filename)
+
+    # Verifica se existe
+    if path and os.path.isfile(path):
+        return path
+    else:
+        print(f"DEBUG PDF: Arquivo não encontrado no disco: {path}")
+        return uri
 
 @login_required
 def logout_view(request):
@@ -312,6 +372,54 @@ def registrar_afericao(request):
         return redirect(f'/atendimento/?id={paciente.id}')
     return redirect('index')
 
+@login_required
+def gerar_alta(request, id):
+    paciente = get_object_or_404(Paciente, id=id)
+
+    # 1. Atualiza Status
+    try:
+        paciente.ativo = False
+        paciente.data_alta = date.today()
+        paciente.save()
+    except Exception as e:
+        print(f"Erro ao salvar: {e}")
+
+    # 2. Carrega imagens na memória (Convertendo para Base64)
+    header_b64 = get_base64_image('header.png')
+    footer_b64 = get_base64_image('footer.png')
+
+    # 3. Prepara Contexto
+    ultima_afericao = paciente.afericoes.order_by('-data_afericao').first()
+    medicamentos = ultima_afericao.medicamentos.all() if ultima_afericao else []
+
+    context = {
+        'paciente': paciente,
+        'medicamentos': medicamentos,
+        'hoje': date.today(),
+        'usuario': request.user,
+        'ultima_pa': f"{ultima_afericao.pressao_sistolica}x{ultima_afericao.pressao_diastolica}" if ultima_afericao else 'N/A',
+        'ultimo_imc': ultima_afericao.imc if ultima_afericao else 'N/A',
+
+        # Passa os códigos Base64
+        'header_b64': header_b64,
+        'footer_b64': footer_b64,
+    }
+
+    # 4. Gera PDF
+    template_path = 'pdf_alta.html'
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="alta_{paciente.nome}.pdf"'
+
+    template = get_template(template_path)
+    html = template.render(context)
+
+    # ATENÇÃO: Removemos o link_callback pois as imagens já estão embutidas
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse(f'Erro ao gerar PDF: {pisa_status.err}')
+
+    return response
 
 # --- Gestão de Usuários e Medicamentos ---
 # (Implementação simplificada seguindo a mesma lógica das views acima)
