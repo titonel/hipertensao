@@ -1,44 +1,32 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-md-12">
-        <h2 class="text-primary"><i class="fas fa-chart-line me-2"></i>Dashboard Clínico</h2>
-        <p class="text-muted">Visão geral da Linha de Cuidado de Hipertensão</p>
-    </div>
+<div class="text-center mb-5">
+    <h1 class="display-5 fw-bold text-primary">Linha de Cuidado Hipertensão</h1>
+    <p class="lead text-muted">Sistema de Gestão da Linha de Cuidado - AME Caraguatatuba</p>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card shadow-sm border-start border-primary border-4">
-            <div class="card-body">
-                <h6 class="text-muted text-uppercase small fw-bold">Pacientes Ativos</h6>
-                <div class="d-flex align-items-center justify-content-between">
-                    <h2 class="mb-0 fw-bold text-dark" id="kpiPacientes">-</h2>
-                    <i class="fas fa-users fa-2x text-primary opacity-25"></i>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="row g-4 justify-content-center">
 
     <div class="col-md-3">
-        <div class="card shadow-sm border-start border-success border-4">
-            <div class="card-body">
-                <h6 class="text-muted text-uppercase small fw-bold">Aferições (Mês)</h6>
-                <div class="d-flex align-items-center justify-content-between">
-                    <h2 class="mb-0 fw-bold text-dark" id="kpiAfericoes">-</h2>
-                    <i class="fas fa-heartbeat fa-2x text-success opacity-25"></i>
+        <a href="{% url 'indices' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 hover-card bg-primary text-white">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-pie fa-4x mb-3"></i>
+                    <h4 class="card-title fw-bold">Índices & Métricas</h4>
+                    <p class="card-text opacity-75">Dashboard gerencial, perfil epidemiológico e KPIs.</p>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="col-md-3">
         <a href="{% url 'atendimento' %}" class="text-decoration-none">
-            <div class="card shadow-sm bg-primary text-white h-100 hover-scale">
-                <div class="card-body d-flex align-items-center justify-content-center flex-column">
-                    <i class="fas fa-stethoscope fa-2x mb-2"></i>
-                    <h6 class="mb-0">Novo Atendimento</h6>
+            <div class="card h-100 shadow-sm border-0 hover-card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-stethoscope fa-4x text-success mb-3"></i>
+                    <h4 class="card-title fw-bold text-dark">Atendimento</h4>
+                    <p class="card-text text-muted">Registro de sinais vitais e evolução clínica.</p>
                 </div>
             </div>
         </a>
@@ -46,78 +34,32 @@
 
     <div class="col-md-3">
         <a href="{% url 'gestao_pacientes' %}" class="text-decoration-none">
-            <div class="card shadow-sm bg-dark text-white h-100 hover-scale">
-                <div class="card-body d-flex align-items-center justify-content-center flex-column">
-                    <i class="fas fa-user-plus fa-2x mb-2"></i>
-                    <h6 class="mb-0">Cadastrar Paciente</h6>
+            <div class="card h-100 shadow-sm border-0 hover-card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-users fa-4x text-secondary mb-3"></i>
+                    <h4 class="card-title fw-bold text-dark">Pacientes</h4>
+                    <p class="card-text text-muted">Cadastro, edição e listagem geral.</p>
                 </div>
             </div>
         </a>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-md-6 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-white fw-bold">
-                Controle da Pressão Arterial (Última Aferição)
+    <div class="col-md-3">
+        <a href="{% url 'gestao_medicamentos' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm border-0 hover-card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-pills fa-4x text-danger mb-3"></i>
+                    <h4 class="card-title fw-bold text-dark">Farmácia</h4>
+                    <p class="card-text text-muted">Gestão da farmacopeia e classes terapêuticas.</p>
+                </div>
             </div>
-            <div class="card-body d-flex justify-content-center align-items-center">
-                <canvas id="graficoControle" style="max-height: 250px;"></canvas>
-            </div>
-        </div>
+        </a>
     </div>
 
-    <div class="col-md-6 mb-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-header bg-white fw-bold">
-                Classes Farmacológicas em Uso
-            </div>
-            <div class="card-body">
-                 <p class="text-center text-muted mt-5">Dados em processamento...</p>
-                 </div>
-        </div>
-    </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // Busca dados da API do Django
-        fetch("{% url 'api_dashboard' %}")
-            .then(response => response.json())
-            .then(data => {
-                // Atualiza KPIs numéricos
-                document.getElementById('kpiPacientes').innerText = data.kpi_pacientes;
-                document.getElementById('kpiAfericoes').innerText = data.kpi_afericoes;
-
-                // Renderiza Gráfico de Pizza (Controle PA)
-                const ctx = document.getElementById('graficoControle').getContext('2d');
-                new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Controlados (<140/90)', 'Não Controlados', 'Sem Dados'],
-                        datasets: [{
-                            data: data.controle_pa,
-                            backgroundColor: ['#198754', '#dc3545', '#6c757d'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { position: 'right' }
-                        }
-                    }
-                });
-            })
-            .catch(err => console.error("Erro ao carregar dashboard:", err));
-    });
-</script>
 
 <style>
-    .hover-scale { transition: transform 0.2s; }
-    .hover-scale:hover { transform: scale(1.05); }
+    .hover-card { transition: transform 0.3s, box-shadow 0.3s; }
+    .hover-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
 </style>
 {% endblock %}

@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Avg, Count, F, ExpressionWrapper, fields
 from django.http import JsonResponse
 from datetime import datetime, date
 from .models import Paciente, Afericao, Medicamento, Usuario
@@ -62,19 +62,42 @@ def index(request):
     if request.user.mudar_senha: return redirect('trocar_senha')
     return render(request, 'index.html')
 
+@login_required
+def dashboard_clinico(request):
+    # Busca municípios distintos para montar o filtro
+    municipios = Paciente.objects.values_list('municipio', flat=True).distinct().order_by('municipio')
+    return render(request, 'indices.html', {'municipios': municipios})
 
 @login_required
 def api_dashboard(request):
-    total_pacientes = Paciente.objects.filter(ativo=True).count()
-    hoje = datetime.now()
-    total_afericoes = Afericao.objects.filter(data_afericao__month=hoje.month, data_afericao__year=hoje.year).count()
+    # Filtro de Municípios (Multi-select)
+    cidades_selecionadas = request.GET.getlist('municipios[]')
 
-    # Lógica simplificada para o gráfico
+    # QuerySet Base
+    pacientes = Paciente.objects.filter(ativo=True)
+
+    if cidades_selecionadas:
+        pacientes = pacientes.filter(municipio__in=cidades_selecionadas)
+
+    total_pacientes = pacientes.count()
+
+    # --- AFERIÇÕES NO MÊS ---
+    hoje = datetime.now()
+    # Filtra aferições apenas dos pacientes do queryset filtrado
+    total_afericoes = Afericao.objects.filter(
+        data_afericao__month=hoje.month,
+        data_afericao__year=hoje.year,
+        paciente__in=pacientes
+    ).count()
+
+    # --- CONTROLE DA PA (Amostra dos pacientes filtrados) ---
     controlados = 0
     nao_controlados = 0
     sem_dados = 0
-    for p in Paciente.objects.filter(ativo=True):
-        ultima = p.afericoes.first()
+
+    # Nota: Em produção com muitos dados, isso deve ser otimizado via SQL/Annotate
+    for p in pacientes:
+        ultima = p.afericoes.first()  # Já ordenado no Model
         if not ultima:
             sem_dados += 1
         elif ultima.pressao_sistolica < 140 and ultima.pressao_diastolica < 90:
@@ -82,13 +105,59 @@ def api_dashboard(request):
         else:
             nao_controlados += 1
 
+    # --- DISTRIBUIÇÃO POR SEXO ---
+    sexo_stats = pacientes.values('sexo').annotate(total=Count('sexo'))
+    sexo_data = {'M': 0, 'F': 0}
+    for item in sexo_stats:
+        sexo_data[item['sexo']] = item['total']
+
+    # --- DISTRIBUIÇÃO POR MUNICÍPIO ---
+    mun_stats = pacientes.values('municipio').annotate(total=Count('municipio')).order_by('-total')
+    mun_labels = [m['municipio'] for m in mun_stats]
+    mun_data = [m['total'] for m in mun_stats]
+
+    # --- DISTRIBUIÇÃO POR IDADE E TEMPO MÉDIO ---
+    faixas_etarias = {'<40': 0, '40-59': 0, '60-79': 0, '80+': 0}
+    soma_dias_lc = 0
+
+    data_atual = date.today()
+
+    for p in pacientes:
+        # Cálculo Idade
+        idade = 0
+        if p.data_nascimento:
+            idade = data_atual.year - p.data_nascimento.year - (
+                        (data_atual.month, data_atual.day) < (p.data_nascimento.month, p.data_nascimento.day))
+
+        if idade < 40:
+            faixas_etarias['<40'] += 1
+        elif idade < 60:
+            faixas_etarias['40-59'] += 1
+        elif idade < 80:
+            faixas_etarias['60-79'] += 1
+        else:
+            faixas_etarias['80+'] += 1
+
+        # Cálculo Tempo de Permanência (em meses)
+        if p.data_insercao:
+            delta = data_atual - p.data_insercao
+            soma_dias_lc += delta.days
+
+    tempo_medio_meses = 0
+    if total_pacientes > 0:
+        tempo_medio_meses = round((soma_dias_lc / total_pacientes) / 30, 1)
+
     return JsonResponse({
         'kpi_pacientes': total_pacientes,
         'kpi_afericoes': total_afericoes,
+        'kpi_tempo_medio': tempo_medio_meses,
         'controle_pa': [controlados, nao_controlados, sem_dados],
-        'grafico_meds': {'labels': [], 'data': []}  # Implementar contagem se necessário
+        'sexo_dist': [sexo_data['M'], sexo_data['F']],
+        'idade_labels': list(faixas_etarias.keys()),
+        'idade_data': list(faixas_etarias.values()),
+        'mun_labels': mun_labels,
+        'mun_data': mun_data
     })
-
 
 # --- Pacientes ---
 
@@ -146,7 +215,16 @@ def atendimento(request):
     paciente = None
     historico = []
 
-    # Agrupamento de medicamentos
+    # Listas para o Gráfico
+    grafico_data = {
+        'labels': [],
+        'sys': [],
+        'dia': [],
+        'pam': [],  # Pressão Média
+        'imc': []
+    }
+
+    # Agrupamento de medicamentos (Lógica anterior mantida)
     meds_db = Medicamento.objects.filter(ativo=True).order_by('classe', 'principio_ativo')
     meds_agrupados = {}
     for m in meds_db:
@@ -166,13 +244,32 @@ def atendimento(request):
         paciente = Paciente.objects.filter(Q(cpf=termo) | Q(nome__icontains=termo)).first()
 
     if paciente:
-        historico = paciente.afericoes.all()[:10]
+        # Busca as últimas 20 aferições para o gráfico ficar mais rico que a tabela
+        qs_historico = paciente.afericoes.all().order_by('-data_afericao')[:20]
+        historico = qs_historico  # A tabela usa esse queryset (do mais novo pro mais antigo)
+
+        # Para o gráfico, precisamos da ordem cronológica (do mais antigo pro mais novo)
+        dados_cronologicos = reversed(qs_historico)
+
+        for a in dados_cronologicos:
+            # Formata data para dia/mês
+            grafico_data['labels'].append(a.data_afericao.strftime("%d/%m"))
+            grafico_data['sys'].append(a.pressao_sistolica)
+            grafico_data['dia'].append(a.pressao_diastolica)
+
+            # Cálculo da PAM (Pressão Arterial Média) aprox: PAD + (PAS-PAD)/3
+            pam = round(a.pressao_diastolica + (a.pressao_sistolica - a.pressao_diastolica) / 3, 1)
+            grafico_data['pam'].append(pam)
+
+            # IMC (pode ser None no banco, tratar para 0 ou null pro JS ignorar)
+            grafico_data['imc'].append(float(a.imc) if a.imc else None)
 
     return render(request, 'atendimento.html', {
         'paciente': paciente,
         'historico': historico,
         'meds_agrupados': meds_agrupados,
-        'ordem_classes': ordem_classes
+        'ordem_classes': ordem_classes,
+        'grafico_data': grafico_data  # Enviando os dados processados
     })
 
 

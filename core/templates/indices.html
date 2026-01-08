@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-primary fw-bold"><i class="fas fa-chart-line me-2"></i>Índices Clínicos</h2>
+        <p class="text-muted mb-0">Monitoramento epidemiológico e operacional.</p>
+    </div>
+    
+    <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-filter me-2"></i>Filtrar Municípios
+        </button>
+        <ul class="dropdown-menu p-3" aria-labelledby="dropdownMenuButton" style="min-width: 250px;">
+            <li><h6 class="dropdown-header">Selecione as origens:</h6></li>
+            {% for m in municipios %}
+            <li class="form-check mb-2">
+                <input class="form-check-input filter-city" type="checkbox" value="{{ m }}" id="chk_{{ forloop.counter }}" checked onchange="atualizarDashboard()">
+                <label class="form-check-label" for="chk_{{ forloop.counter }}">
+                    {{ m }}
+                </label>
+            </li>
+            {% endfor %}
+            <li><hr class="dropdown-divider"></li>
+            <li><button class="btn btn-sm btn-light w-100" onclick="selecionarTodos(true)">Marcar Todos</button></li>
+            <li><button class="btn btn-sm btn-light w-100 mt-1" onclick="selecionarTodos(false)">Desmarcar Todos</button></li>
+        </ul>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-start border-primary border-4 h-100">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase text-muted small fw-bold">Pacientes Filtrados</h6>
+                    <h2 class="mb-0 fw-bold" id="kpiPacientes">-</h2>
+                </div>
+                <i class="fas fa-user-friends fa-2x text-primary opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-start border-success border-4 h-100">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase text-muted small fw-bold">Aferições (Mês Atual)</h6>
+                    <h2 class="mb-0 fw-bold" id="kpiAfericoes">-</h2>
+                </div>
+                <i class="fas fa-heartbeat fa-2x text-success opacity-25"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm border-start border-warning border-4 h-100">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase text-muted small fw-bold">Tempo Médio na Linha de Cuidado</h6>
+                    <h2 class="mb-0 fw-bold"><span id="kpiTempo">-</span> <small class="fs-6 text-muted">meses</small></h2>
+                </div>
+                <i class="fas fa-hourglass-half fa-2x text-warning opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">Controle Pressórico</div>
+            <div class="card-body position-relative">
+                <canvas id="chartControle"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">Distribuição por Sexo</div>
+            <div class="card-body position-relative">
+                <canvas id="chartSexo"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-bold">Faixa Etária</div>
+            <div class="card-body position-relative">
+                <canvas id="chartIdade"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white fw-bold">Distribuição Geográfica (Municípios)</div>
+            <div class="card-body">
+                <canvas id="chartMunicipios" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let charts = {}; // Armazena instâncias dos gráficos para atualizar
+
+    function selecionarTodos(estado) {
+        document.querySelectorAll('.filter-city').forEach(chk => chk.checked = estado);
+        atualizarDashboard();
+    }
+
+    function atualizarDashboard() {
+        // Coleta checkboxes marcados
+        let selecionados = [];
+        document.querySelectorAll('.filter-city:checked').forEach(chk => {
+            selecionados.push(chk.value);
+        });
+
+        // Monta Query String
+        let params = new URLSearchParams();
+        selecionados.forEach(c => params.append('municipios[]', c));
+
+        fetch(`{% url 'api_dashboard' %}?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                // Atualiza KPIs
+                document.getElementById('kpiPacientes').innerText = data.kpi_pacientes;
+                document.getElementById('kpiAfericoes').innerText = data.kpi_afericoes;
+                document.getElementById('kpiTempo').innerText = data.kpi_tempo_medio;
+
+                // Atualiza Gráficos
+                renderChart('chartControle', 'doughnut', 
+                    ['Controlados', 'Não Controlados', 'Sem Dados'], 
+                    data.controle_pa, 
+                    ['#198754', '#dc3545', '#6c757d']
+                );
+
+                renderChart('chartSexo', 'pie', 
+                    ['Masculino', 'Feminino'], 
+                    data.sexo_dist, 
+                    ['#0d6efd', '#d63384']
+                );
+
+                renderChart('chartIdade', 'bar', 
+                    data.idade_labels, 
+                    data.idade_data, 
+                    '#ffc107'
+                );
+                
+                renderChart('chartMunicipios', 'bar', 
+                    data.mun_labels, 
+                    data.mun_data, 
+                    '#6610f2'
+                );
+            })
+            .catch(err => console.error(err));
+    }
+
+    function renderChart(canvasId, type, labels, data, colors) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        // Se já existe, destrói antes de recriar
+        if (charts[canvasId]) {
+            charts[canvasId].destroy();
+        }
+
+        let datasetConfig = {
+            data: data,
+            borderWidth: 1
+        };
+
+        // Tratamento de cor (única ou array)
+        if (Array.isArray(colors)) {
+            datasetConfig.backgroundColor = colors;
+        } else {
+            datasetConfig.backgroundColor = colors;
+            datasetConfig.label = 'Pacientes';
+        }
+
+        charts[canvasId] = new Chart(ctx, {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [datasetConfig]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: type !== 'bar' } // Esconde legenda em barras simples
+                },
+                scales: type === 'bar' ? { y: { beginAtZero: true } } : {}
+            }
+        });
+    }
+
+    // Carrega inicial
+    document.addEventListener("DOMContentLoaded", atualizarDashboard);
+</script>
+{% endblock %}

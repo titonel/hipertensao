@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %} {% block content %}
+{% load custom_filters %}
+
+{% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-user-nurse text-danger me-2"></i>Atendimento Clínico</h2>
@@ -61,7 +63,7 @@
                                 <label class="small text-muted">Altura (m)</label>
                                 <input type="number" step="0.01" name="altura" id="inputAltura" class="form-control"
                                        value="{{ paciente.altura_ultima|stringformat:'f' }}" placeholder="1,70">
-                                </div>
+                            </div>
                             <div class="col-md-3">
                                 <label class="small text-muted">IMC</label>
                                 <input type="text" id="displayIMC" class="form-control bg-white fw-bold" readonly tabindex="-1">
@@ -122,13 +124,23 @@
         </div>
 
         <div class="col-md-5">
+
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-white fw-bold text-primary">
+                    <i class="fas fa-chart-line me-2"></i>Evolução Clínica
+                </div>
+                <div class="card-body p-2">
+                    <canvas id="chartEvolucao" height="200"></canvas>
+                </div>
+            </div>
+
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-secondary text-white">
                     <h6 class="mb-0"><i class="fas fa-history me-2"></i>Histórico Recente</h6>
                 </div>
-                <div class="card-body p-0 table-responsive">
-                    <table class="table table-striped table-hover mb-0 text-center" style="font-size: 0.9rem;">
-                        <thead class="table-light">
+                <div class="card-body p-0 table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-striped table-hover mb-0 text-center" style="font-size: 0.85rem;">
+                        <thead class="table-light sticky-top">
                             <tr>
                                 <th>Data</th>
                                 <th>PA</th>
@@ -138,7 +150,7 @@
                         <tbody>
                             {% for reg in historico %}
                             <tr>
-                                <td>{{ reg.data_afericao|date:"d/m" }}<br><small>{{ reg.data_afericao|date:"H:i" }}</small></td>
+                                <td>{{ reg.data_afericao|date:"d/m/y" }}<br><small>{{ reg.data_afericao|date:"H:i" }}</small></td>
                                 <td>
                                     {% if reg.pressao_sistolica >= 140 or reg.pressao_diastolica >= 90 %}
                                         <span class="badge bg-danger">{{ reg.pressao_sistolica }}x{{ reg.pressao_diastolica }}</span>
@@ -171,25 +183,25 @@
     {% endif %}
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // --- 1. Lógica do IMC (Formulário) ---
         const inputPeso = document.getElementById('inputPeso');
         const inputAltura = document.getElementById('inputAltura');
         const displayIMC = document.getElementById('displayIMC');
         const labelClassificacao = document.getElementById('labelClassificacao');
 
         function calcularIMC() {
-            // Substitui vírgula por ponto caso venha do input
             let pesoVal = inputPeso.value.replace(',', '.');
             let altVal = inputAltura.value.replace(',', '.');
-
             const peso = parseFloat(pesoVal);
             const altura = parseFloat(altVal);
 
             if (peso > 0 && altura > 0) {
                 const imc = (peso / (altura * altura)).toFixed(2);
                 displayIMC.value = imc;
-
                 let texto = ""; let classe = "";
                 if (imc < 18.5) { texto = "Baixo Peso"; classe = "bg-warning text-dark"; }
                 else if (imc < 25) { texto = "Eutrófico"; classe = "bg-success"; }
@@ -197,20 +209,102 @@
                 else if (imc < 35) { texto = "Obesidade I"; classe = "bg-danger"; }
                 else if (imc < 40) { texto = "Obesidade II"; classe = "bg-danger"; }
                 else { texto = "Obesidade III"; classe = "bg-dark"; }
-
                 labelClassificacao.className = `badge w-100 p-2 ${classe}`;
                 labelClassificacao.innerText = texto;
             }
         }
-
         if (inputAltura && inputAltura.value) {
-            // Substitui vírgula do Django DecimalField por ponto para o JS
             inputAltura.value = inputAltura.value.replace(',', '.');
             calcularIMC();
         }
         if (inputPeso) inputPeso.addEventListener('input', calcularIMC);
         if (inputAltura) inputAltura.addEventListener('input', calcularIMC);
+
+        // --- 2. Lógica do Gráfico Evolutivo (Chart.js) ---
+        {% if paciente and grafico_data.labels %}
+            const ctx = document.getElementById('chartEvolucao').getContext('2d');
+
+            // Dados vindos do Django
+            const labels = {{ grafico_data.labels|safe }};
+            const sysData = {{ grafico_data.sys|safe }};
+            const diaData = {{ grafico_data.dia|safe }};
+            const pamData = {{ grafico_data.pam|safe }};
+            const imcData = {{ grafico_data.imc|safe }};
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'PAS (Máx)',
+                            data: sysData,
+                            borderColor: '#004587', // Azul Seconci
+                            backgroundColor: '#004587',
+                            yAxisID: 'y_pressao',
+                            tension: 0.3
+                        },
+                        {
+                            label: 'PAD (Mín)',
+                            data: diaData,
+                            borderColor: '#5dade2', // Azul Claro
+                            backgroundColor: '#5dade2',
+                            yAxisID: 'y_pressao',
+                            tension: 0.3
+                        },
+                        {
+                            label: 'PAM (Média)',
+                            data: pamData,
+                            borderColor: '#198754', // Verde
+                            borderDash: [5, 5],
+                            pointRadius: 0, // Linha de referência
+                            borderWidth: 1,
+                            yAxisID: 'y_pressao',
+                            tension: 0.3
+                        },
+                        {
+                            label: 'IMC',
+                            data: imcData,
+                            borderColor: '#F26522', // Laranja Seconci
+                            backgroundColor: '#F26522',
+                            yAxisID: 'y_imc',
+                            type: 'line', // ou 'bar' se preferir
+                            borderWidth: 2,
+                            pointStyle: 'rectRot',
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        y_pressao: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Pressão (mmHg)' },
+                            suggestedMin: 40,
+                            suggestedMax: 180
+                        },
+                        y_imc: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'IMC (kg/m²)' },
+                            grid: {
+                                drawOnChartArea: false, // remove grade do eixo direito para limpar o visual
+                            },
+                            suggestedMin: 15,
+                            suggestedMax: 45
+                        }
+                    }
+                }
+            });
+        {% endif %}
     });
 </script>
-
 {% endblock %}

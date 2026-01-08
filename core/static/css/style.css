@@ -1,0 +1,102 @@
+/* core/static/css/style.css */
+
+:root {
+    /* --- PALETA SECONCI-SP --- */
+    /* Ajuste os códigos HEX abaixo conforme sua tabela */
+    --seconci-azul: #004587;      /* Azul Institucional (Cor Principal) */
+    --seconci-laranja: #ef7d12;   /* Laranja (Cor de Destaque/Ação) */
+    --seconci-cinza-claro: #F4F6F9; /* Fundo das páginas Seconci Soft Gray */
+    --seconci-cinza-texto: #333333;
+    --seconci-dark-slate: #1A1A1A;
+    --seconci-verde: #018da8;
+}
+
+/* --- FUNDO GERAL --- */
+body {
+    background-color: var(--seconci-cinza-claro) !important;
+    color: var(--seconci-cinza-texto);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- SOBRESCREVENDO O "PRIMARY" (Azul Bootstrap -> Azul Seconci) --- */
+.text-primary {
+    color: var(--seconci-azul) !important;
+}
+
+.bg-primary {
+    background-color: var(--seconci-verde) !important;
+}
+
+.btn-primary {
+    background-color: var(--seconci-azul) !important;
+    border-color: var(--seconci-azul) !important;
+}
+
+.btn-primary:hover {
+    background-color: #003366 !important; /* Um tom mais escuro para o hover */
+    border-color: #003366 !important;
+}
+
+.border-primary {
+    border-color: var(--seconci-azul) !important;
+}
+
+.btn-outline-primary {
+    color: var(--seconci-azul) !important;
+    border-color: var(--seconci-azul) !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--seconci-azul) !important;
+    color: #fff !important;
+}
+
+/* --- NAVBAR (Barra Superior) --- */
+.navbar-dark.bg-dark {
+    background-color: var(--seconci-verde) !important; /* Substitui o preto pelo Azul Seconci */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* --- CARDS (Cartões) --- */
+.card {
+    border: none !important; /* Remove bordas duras */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Sombra suave */
+}
+
+.card-header.bg-primary {
+    background-color: var(--seconci-azul) !important;
+}
+
+/* --- ELEMENTOS DE DESTAQUE (Laranja Seconci) --- */
+/* Usamos classes customizadas ou sobrescrevemos o 'warning' se desejar */
+.seconci-destaque {
+    color: var(--seconci-laranja);
+}
+
+.btn-success {
+    /* Opcional: Se quiser que o botão de "Salvar/Novo" seja Laranja ao invés de Verde */
+    /* Descomente abaixo se desejar mudar */
+    /* background-color: var(--seconci-laranja) !important;
+    border-color: var(--seconci-laranja) !important;
+    */
+}
+
+/* --- AJUSTES NOS LINKS --- */
+a {
+    color: var(--seconci-azul);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--seconci-laranja);
+}
+
+/* --- DROPDOWN DO MENU --- */
+.dropdown-item:active {
+    background-color: var(--seconci-azul) !important;
+}
