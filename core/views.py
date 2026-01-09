@@ -492,12 +492,72 @@ def gerar_alta(request, id):
 
     return response
 
+
+@login_required
+def gerar_pedido_exames(request, paciente_id):
+    """
+    Gera PDF de 4 páginas com pedidos de exames do protocolo.
+    """
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    idade = calcular_idade(paciente.data_nascimento)
+
+    # Carrega imagem do header em Base64 (Reutilizando a função que criamos antes)
+    header_b64 = get_base64_image('header.png')
+
+    # Contexto para o template
+    context = {
+        'paciente': paciente,
+        'idade': idade,
+        'usuario': request.user,
+        'data_hoje': date.today(),
+        'header_b64': header_b64,
+    }
+
+    # Renderização do PDF
+    template_path = 'pdf_pedidos_exames.html'
+    response = HttpResponse(content_type='application/pdf')
+    # O arquivo será baixado com este nome:
+    response['Content-Disposition'] = f'attachment; filename="pedidos_{paciente.nome}.pdf"'
+
+    template = get_template(template_path)
+    html = template.render(context)
+
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse(f'Erro ao gerar PDF: {pisa_status.err}')
+
+    return response
+
+
+
 # --- Gestão de Usuários e Medicamentos ---
-# (Implementação simplificada seguindo a mesma lógica das views acima)
 @login_required
 def gestao_usuarios(request):
-    usuarios = Usuario.objects.all()
-    return render(request, 'gestao_usuarios.html', {'usuarios': usuarios})
+    """
+    Lista usuários e processa o formulário de cadastro (Modal).
+    """
+    # 1. LÓGICA DE SALVAR (POST)
+    if request.method == 'POST':
+        form = UsuarioForm(request.POST)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Usuário cadastrado com sucesso!")
+                return redirect('gestao_usuarios')  # Recarrega a página limpa
+            except Exception as e:
+                messages.error(request, f"Erro ao salvar: {e}")
+        else:
+            # Se o formulário for inválido (ex: usuário já existe, email inválido)
+            # Mostraremos o erro no topo da tela via Messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Erro no campo '{field}': {error}")
+
+    # 2. LÓGICA DE LISTAGEM (GET)
+    users = Usuario.objects.all().order_by('first_name')
+
+    return render(request, 'gestao_usuarios.html', {'users': users})
 
 
 @login_required

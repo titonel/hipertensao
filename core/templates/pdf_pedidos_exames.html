@@ -1,0 +1,207 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Pedidos de Exames - {{ paciente.nome }}</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 1.5cm;
+        }
+
+        body { font-family: Helvetica, Arial, sans-serif; color: #000; }
+
+        /* Estilo do Cabeçalho da Imagem */
+        .header-img-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header-img {
+            height: 3.0cm; /* Altura fixa para o logo */
+            width: auto;
+        }
+
+        /* Estilo dos Dados do Paciente */
+        .dados-paciente {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-bottom: 30px;
+            background-color: #f9f9f9;
+            font-size: 11pt;
+        }
+        .dados-row { margin-bottom: 5px; }
+
+        /* Estilo do Conteúdo do Pedido */
+        .titulo-pedido {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            text-decoration: underline;
+        }
+
+        .lista-exames {
+            font-size: 12pt;
+            margin-left: 20px;
+            margin-bottom: 40px;
+        }
+        .lista-exames li { margin-bottom: 8px; }
+
+        .destaque-exame {
+            font-size: 16pt;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 50px;
+            margin-bottom: 50px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+        }
+
+        /* Rodapé / Assinatura */
+        .assinatura-box {
+            margin-top: 80px;
+            text-align: center;
+            width: 100%;
+        }
+        .linha-assinatura {
+            border-top: 1px solid #000;
+            width: 60%;
+            margin: 0 auto;
+            padding-top: 5px;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-img-container">
+        {% if header_b64 %}
+            <img src="data:image/png;base64,{{ header_b64 }}" class="header-img"/>
+        {% else %}
+            <h1>CABEÇALHO INSTITUCIONAL</h1>
+        {% endif %}
+    </div>
+
+    <div class="dados-paciente">
+        <div class="dados-row"><strong>Paciente:</strong> {{ paciente.nome }}</div>
+        <div class="dados-row">
+            <strong>Idade:</strong> {{ idade }} anos &nbsp;|&nbsp;
+            <strong>CPF:</strong> {{ paciente.cpf }} &nbsp;|&nbsp;
+            <strong>SIRESP:</strong> {{ paciente.siresp|default:"________________" }}
+        </div>
+    </div>
+
+    <div class="titulo-pedido">Solicitação de Exames Laboratoriais</div>
+
+    <ul class="lista-exames">
+        <li>Hemograma completo</li>
+        <li>Ureia</li>
+        <li>Creatinina</li>
+        <li>Glicose</li>
+        <li>Hemoglobina A1c</li>
+        <li>Colesterol total e frações</li>
+        <li>Trigliceridios</li>
+    </ul>
+
+    <div class="assinatura-box">
+        <div class="linha-assinatura">
+            <strong>{{ usuario.get_full_name|default:"Profissional de Saúde" }}</strong><br>
+            Registro: {{ usuario.registro_profissional|default:"CRM/COREN: _______" }}<br>
+            {{ data_hoje|date:"d/m/Y" }}
+        </div>
+    </div>
+
+    <pdf:nextpage />
+
+
+    <div class="header-img-container">
+        {% if header_b64 %}<img src="data:image/png;base64,{{ header_b64 }}" class="header-img"/>{% endif %}
+    </div>
+
+    <div class="dados-paciente">
+        <div class="dados-row"><strong>Paciente:</strong> {{ paciente.nome }}</div>
+        <div class="dados-row">
+            <strong>Idade:</strong> {{ idade }} anos &nbsp;|&nbsp;
+            <strong>CPF:</strong> {{ paciente.cpf }} &nbsp;|&nbsp;
+            <strong>SIRESP:</strong> {{ paciente.siresp|default:"________________" }}
+        </div>
+    </div>
+
+    <div class="titulo-pedido">Solicitação de Exame</div>
+
+    <div class="destaque-exame">
+        Monitorização Ambulatorial da Pressão Arterial (M.A.P.A 24h)
+    </div>
+
+    <div class="assinatura-box">
+        <div class="linha-assinatura">
+            <strong>{{ usuario.get_full_name }}</strong><br>
+            Registro: {{ usuario.registro_profissional|default:"CRM/COREN: _______" }}<br>
+            {{ data_hoje|date:"d/m/Y" }}
+        </div>
+    </div>
+
+    <pdf:nextpage />
+
+
+    <div class="header-img-container">
+        {% if header_b64 %}<img src="data:image/png;base64,{{ header_b64 }}" class="header-img"/>{% endif %}
+    </div>
+
+    <div class="dados-paciente">
+        <div class="dados-row"><strong>Paciente:</strong> {{ paciente.nome }}</div>
+        <div class="dados-row">
+            <strong>Idade:</strong> {{ idade }} anos &nbsp;|&nbsp;
+            <strong>CPF:</strong> {{ paciente.cpf }} &nbsp;|&nbsp;
+            <strong>SIRESP:</strong> {{ paciente.siresp|default:"________________" }}
+        </div>
+    </div>
+
+    <div class="titulo-pedido">Solicitação de Exame</div>
+
+    <div class="destaque-exame">
+        Eletrocardiograma (ECG)
+    </div>
+
+    <div class="assinatura-box">
+        <div class="linha-assinatura">
+            <strong>{{ usuario.get_full_name }}</strong><br>
+            Registro: {{ usuario.registro_profissional|default:"CRM/COREN: _______" }}<br>
+            {{ data_hoje|date:"d/m/Y" }}
+        </div>
+    </div>
+
+    <pdf:nextpage />
+
+
+    <div class="header-img-container">
+        {% if header_b64 %}<img src="data:image/png;base64,{{ header_b64 }}" class="header-img"/>{% endif %}
+    </div>
+
+    <div class="dados-paciente">
+        <div class="dados-row"><strong>Paciente:</strong> {{ paciente.nome }}</div>
+        <div class="dados-row">
+            <strong>Idade:</strong> {{ idade }} anos &nbsp;|&nbsp;
+            <strong>CPF:</strong> {{ paciente.cpf }} &nbsp;|&nbsp;
+            <strong>SIRESP:</strong> {{ paciente.siresp|default:"________________" }}
+        </div>
+    </div>
+
+    <div class="titulo-pedido">Solicitação de Exame</div>
+
+    <div class="destaque-exame">
+        Ecocardiograma Bidimensional com Doppler
+    </div>
+
+    <div class="assinatura-box">
+        <div class="linha-assinatura">
+            <strong>{{ usuario.get_full_name }}</strong><br>
+            Registro: {{ usuario.registro_profissional|default:"CRM/COREN: _______" }}<br>
+            {{ data_hoje|date:"d/m/Y" }}
+        </div>
+    </div>
+
+</body>
+</html>

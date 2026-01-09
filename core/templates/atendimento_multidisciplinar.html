@@ -2,48 +2,64 @@
 {% block content %}
 <div class="container mt-4">
     <div class="card border-primary border-4 shadow-sm mb-4">
-        <div class="card-body">
-            <h3 class="text-primary fw-bold">{{ paciente.nome }}</h3>
-            <span class="badge bg-secondary">Idade: {{ idade }}</span>
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="text-primary fw-bold mb-0">{{ paciente.nome }}</h3>
+                <small class="text-muted">CPF: {{ paciente.cpf }}</small>
+            </div>
+            <span class="badge bg-secondary fs-6">Idade: {{ idade }} anos</span>
         </div>
     </div>
 
     <div class="card shadow">
         <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Avaliação Multidisciplinar - 1ª Consulta</h5>
+            <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Avaliação Multidisciplinar - 1ª Consulta</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body p-4">
             <form method="POST">
                 {% csrf_token %}
 
-                <h6 class="text-success border-bottom pb-2">1. Antropometria</h6>
+                <h6 class="text-success border-bottom pb-2 mb-3 fw-bold">1. Medidas Antropométricas</h6>
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
-                        <label>Peso (kg)</label>
-                        <input type="number" step="0.1" name="peso" class="form-control" required>
+                        <label class="form-label fw-bold">Peso (kg)</label>
+                        <div class="input-group">
+                            <input type="number" step="0.1" name="peso" id="peso" class="form-control" required placeholder="00.0">
+                            <span class="input-group-text">kg</span>
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <label>Altura (m)</label>
-                        <input type="number" step="0.01" name="altura" class="form-control" required>
+                        <label class="form-label fw-bold">Altura (m)</label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" name="altura" id="altura" class="form-control" required placeholder="0.00">
+                            <span class="input-group-text">m</span>
+                        </div>
                     </div>
                     <div class="col-md-3">
-                        <label>Circunf. Abd (cm)</label>
-                        <input type="number" step="0.1" name="circunf" class="form-control" required>
+                        <label class="form-label fw-bold text-muted">IMC (Automático)</label>
+                        <input type="text" id="displayIMC" class="form-control bg-light fw-bold" readonly tabindex="-1">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Circunf. Abdominal</label>
+                        <div class="input-group">
+                            <input type="number" step="0.1" name="circunf" class="form-control" required placeholder="00.0">
+                            <span class="input-group-text">cm</span>
+                        </div>
                     </div>
                 </div>
 
-                <h6 class="text-success border-bottom pb-2">2. Comorbidades e Hábitos</h6>
+                <h6 class="text-success border-bottom pb-2 mb-3 fw-bold">2. Comorbidades e Hábitos</h6>
 
                 <div class="card bg-light border-0 mb-3">
-                    <div class="card-body">
-                        <div class="form-check form-switch mb-2">
+                    <div class="card-body py-2">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="diabetes" id="checkDiabetes" onchange="toggleDiabetes()">
-                            <label class="form-check-label fw-bold">Paciente possui Diabetes?</label>
+                            <label class="form-check-label fw-bold ms-2" for="checkDiabetes">Paciente possui Diabetes?</label>
                         </div>
 
-                        <div id="divTipoDiabetes" class="d-none ms-4">
-                            <label class="small text-muted">Qual o tipo?</label>
-                            <select name="tipo_diabetes" class="form-select w-50">
+                        <div id="divTipoDiabetes" class="d-none ms-5 mt-2">
+                            <label class="small text-muted mb-1">Qual o tipo?</label>
+                            <select name="tipo_diabetes" class="form-select w-auto">
                                 <option value="" selected>Selecione...</option>
                                 <option value="1">Tipo 1</option>
                                 <option value="2">Tipo 2</option>
@@ -54,76 +70,98 @@
                 </div>
 
                 <div class="card bg-light border-0 mb-3">
-                    <div class="card-body">
-                        <div class="form-check form-switch mb-2">
+                    <div class="card-body py-2">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="fumante" id="checkFumante" onchange="toggleFumante()">
-                            <label class="form-check-label fw-bold">Paciente é tabagista?</label>
+                            <label class="form-check-label fw-bold ms-2" for="checkFumante">Paciente é tabagista?</label>
                         </div>
 
-                        <div id="divFumante" class="d-none ms-4 row g-3 align-items-end">
+                        <div id="divFumante" class="d-none ms-5 mt-2 row g-3 align-items-end">
                             <div class="col-md-3">
-                                <label class="small">Maços por dia</label>
-                                <input type="number" step="0.1" name="macos" id="inputMacos" class="form-control" placeholder="Ex: 1.5">
+                                <label class="small text-muted">Maços por dia</label>
+                                <input type="number" step="0.1" name="macos" id="inputMacos" class="form-control form-control-sm" placeholder="Ex: 1.5">
                             </div>
                             <div class="col-md-3">
-                                <label class="small">Anos fumando</label>
-                                <input type="number" name="anos_fumando" id="inputAnos" class="form-control" placeholder="Ex: 20">
+                                <label class="small text-muted">Anos fumando</label>
+                                <input type="number" name="anos_fumando" id="inputAnos" class="form-control form-control-sm" placeholder="Ex: 20">
                             </div>
                             <div class="col-md-4">
                                 <label class="small text-muted">Carga Tabágica (Anos-Maço)</label>
-                                <input type="text" id="displayCarga" class="form-control bg-white fw-bold text-danger" readonly>
+                                <input type="text" id="displayCarga" class="form-control form-control-sm bg-white fw-bold text-danger" readonly>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="card bg-light border-0 mb-3">
-                    <div class="card-body">
-                        <div class="form-check form-switch mb-2">
+                    <div class="card-body py-2">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="tem_loa" id="checkLoa" onchange="toggleLoa()">
-                            <label class="form-check-label fw-bold">Possui Lesão de Órgão-Alvo (LOA)?</label>
+                            <label class="form-check-label fw-bold ms-2" for="checkLoa">Possui Lesão de Órgão-Alvo (LOA)?</label>
                         </div>
 
-                        <div id="divLoa" class="d-none ms-4 mt-2">
-                            <p class="small text-muted mb-1">Selecione as lesões identificadas:</p>
-                            <div class="row">
-                                <div class="col-md-4"><input type="checkbox" name="loa_coracao"> Coração (IAM/HVE)</div>
-                                <div class="col-md-4"><input type="checkbox" name="loa_cerebro"> Cérebro (AVC)</div>
-                                <div class="col-md-4"><input type="checkbox" name="loa_rins"> Rins (DRC)</div>
-                                <div class="col-md-4"><input type="checkbox" name="loa_olhos"> Olhos (Retinopatia)</div>
-                                <div class="col-md-4"><input type="checkbox" name="loa_arterias"> Artérias Periféricas</div>
+                        <div id="divLoa" class="d-none ms-5 mt-2 p-2 border rounded bg-white">
+                            <p class="small text-muted mb-2 border-bottom">Selecione as lesões identificadas:</p>
+                            <div class="row g-2">
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_coracao" id="loa1"><label class="form-check-label" for="loa1">Coração (IAM/HVE)</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_cerebro" id="loa2"><label class="form-check-label" for="loa2">Cérebro (AVC)</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_rins" id="loa3"><label class="form-check-label" for="loa3">Rins (DRC)</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_olhos" id="loa4"><label class="form-check-label" for="loa4">Olhos (Retinopatia)</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_arterias" id="loa5"><label class="form-check-label" for="loa5">Artérias Periféricas</label></div></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label>Observações</label>
-                    <textarea name="obs" class="form-control"></textarea>
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Observações / Conduta</label>
+                    <textarea name="obs" class="form-control" rows="3" placeholder="Orientações dadas, encaminhamentos, etc..."></textarea>
                 </div>
+                <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                   <a href="{% url 'gerar_pedido_exames' paciente.id %}" target="_blank" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-file-medical me-2"></i>Imprimir Pedido de Exames
+                   </a>
 
-                <button type="submit" class="btn btn-success w-100">Salvar Dados</button>
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'atendimento_hub' %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-success px-5 fw-bold">Salvar Atendimento</button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
 <script>
-    // 1. Toggle Diabetes
-    function toggleDiabetes() {
-        const check = document.getElementById('checkDiabetes');
-        const div = document.getElementById('divTipoDiabetes');
-        div.className = check.checked ? 'd-block ms-4' : 'd-none ms-4';
-    }
+    // --- LÓGICA DE CÁLCULOS ---
 
-    // 2. Toggle Fumante e Calculadora
-    function toggleFumante() {
-        const check = document.getElementById('checkFumante');
-        const div = document.getElementById('divFumante');
-        div.className = check.checked ? 'd-flex ms-4 row g-3 align-items-end' : 'd-none ms-4 row g-3';
-    }
+    // 1. Cálculo de IMC
+    const inputPeso = document.getElementById('peso');
+    const inputAltura = document.getElementById('altura');
+    const displayIMC = document.getElementById('displayIMC');
 
-    // Calculadora Anos-Maço
+    function calcularIMC() {
+        const peso = parseFloat(inputPeso.value) || 0;
+        const altura = parseFloat(inputAltura.value) || 0;
+
+        if (peso > 0 && altura > 0) {
+            const imc = peso / (altura * altura);
+            displayIMC.value = imc.toFixed(2);
+
+            // Coloração condicional visual (opcional)
+            if (imc > 30) displayIMC.style.color = 'red';
+            else if (imc > 25) displayIMC.style.color = 'orange';
+            else displayIMC.style.color = 'green';
+        } else {
+            displayIMC.value = '';
+        }
+    }
+    // Escuta eventos de digitação
+    inputPeso.addEventListener('input', calcularIMC);
+    inputAltura.addEventListener('input', calcularIMC);
+
+
+    // 2. Cálculo de Carga Tabágica
     const inMacos = document.getElementById('inputMacos');
     const inAnos = document.getElementById('inputAnos');
     const displayCarga = document.getElementById('displayCarga');
@@ -133,16 +171,32 @@
         const anos = parseFloat(inAnos.value) || 0;
         if (macos > 0 && anos > 0) {
             displayCarga.value = (macos * anos).toFixed(1);
+        } else {
+            displayCarga.value = '';
         }
     }
     inMacos.addEventListener('input', calcCarga);
     inAnos.addEventListener('input', calcCarga);
 
-    // 3. Toggle LOA
+
+    // --- LÓGICA DE EXIBIÇÃO (TOGGLES) ---
+
+    function toggleDiabetes() {
+        const check = document.getElementById('checkDiabetes');
+        const div = document.getElementById('divTipoDiabetes');
+        div.className = check.checked ? 'd-block ms-5 mt-2' : 'd-none ms-5 mt-2';
+    }
+
+    function toggleFumante() {
+        const check = document.getElementById('checkFumante');
+        const div = document.getElementById('divFumante');
+        div.className = check.checked ? 'd-flex ms-5 mt-2 row g-3 align-items-end' : 'd-none ms-5 mt-2 row g-3';
+    }
+
     function toggleLoa() {
         const check = document.getElementById('checkLoa');
         const div = document.getElementById('divLoa');
-        div.className = check.checked ? 'd-block ms-4 mt-2' : 'd-none ms-4 mt-2';
+        div.className = check.checked ? 'd-block ms-5 mt-2 p-2 border rounded bg-white' : 'd-none ms-5 mt-2';
     }
 </script>
 {% endblock %}

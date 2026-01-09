@@ -4,17 +4,76 @@ from datetime import date
 
 
 class Usuario(AbstractUser):
-    # Django já tem: username, password, is_active, first_name
-    email = models.EmailField('E-mail', unique=True)
-    drt = models.CharField('DRT', max_length=8)
-    mudar_senha = models.BooleanField(default=False)
-    email_verificado = models.BooleanField(default=False)
+    # --- 1. CAMPOS DE CONTROLE (RESTAURADOS) ---
+    mudar_senha = models.BooleanField(default=False, verbose_name="Forçar Troca de Senha")
+    email_verificado = models.BooleanField(default=False, verbose_name="Email Verificado")
 
-    USERNAME_FIELD = 'email'  # Login será pelo E-mail
-    REQUIRED_FIELDS = ['username', 'drt']
+    # --- 2. CAMPOS PROFISSIONAIS (NOVOS) ---
+    TIPO_PROFISSIONAL_CHOICES = [
+        ('MED', 'Médico'),
+        ('ENF', 'Enfermeiro'),
+        ('NUT', 'Nutricionista'),
+        ('FAR', 'Farmacêutico'),
+    ]
+
+    TIPO_REGISTRO_CHOICES = [
+        ('CRM', 'CRM'),
+        ('COREN', 'COREN'),
+        ('CRN', 'CRN'),
+        ('CRF', 'CRF'),
+    ]
+
+    tipo_profissional = models.CharField(
+        max_length=3,
+        choices=TIPO_PROFISSIONAL_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Tipo Profissional"
+    )
+
+    tipo_registro = models.CharField(
+        max_length=10,
+        choices=TIPO_REGISTRO_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Conselho (Ex: CRM)"
+    )
+
+    registro_profissional = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name="Número do Conselho"
+    )
+
+    drt = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name="DRT / Matrícula"
+    )
+
+    # --- 3. MÉTODOS AUXILIARES ---
+    @property
+    def assinatura_completa(self):
+        """Retorna uma string formatada para assinatura em documentos/PDFs"""
+        nome = self.get_full_name() or self.username
+        detalhes = []
+
+        # Adiciona Conselho se tiver
+        if self.tipo_registro and self.registro_profissional:
+            detalhes.append(f"{self.tipo_registro}: {self.registro_profissional}")
+
+        # Adiciona DRT se tiver (opcional na assinatura, mas disponível)
+        if self.drt:
+            detalhes.append(f"Matrícula: {self.drt}")
+
+        if detalhes:
+            return f"{nome} | {' - '.join(detalhes)}"
+        return nome
 
     def __str__(self):
-        return self.get_full_name() or self.username
+        return self.assinatura_completa
 
 
 class Medicamento(models.Model):

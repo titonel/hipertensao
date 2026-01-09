@@ -1,133 +1,182 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-user-shield text-primary me-2"></i>Gestão de Usuários</h2>
-    <button class="btn btn-primary" onclick="abrirModalNovo()">
-        <i class="fas fa-plus me-2"></i>Novo Usuário
-    </button>
-</div>
+<div class="container mt-4">
+{% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary fw-bold"><i class="fas fa-user-md me-2"></i>Gestão de Equipe</h2>
+            <p class="text-muted">Gerencie médicos, enfermeiros e equipe administrativa.</p>
+        </div>
+        <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#modalUsuario">
+            <i class="fas fa-plus me-2"></i>Novo Usuário
+        </button>
+    </div>
 
-<div class="card shadow-sm">
-    <div class="card-body table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Nome</th>
-                    <th>E-mail (Login)</th>
-                    <th>DRT</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for u in usuarios %}
-                <tr>
-                    <td>{{ u.first_name }}</td>
-                    <td>{{ u.email }}</td>
-                    <td>{{ u.drt }}</td>
-                    <td>
-                        {% if u.is_active %}
-                            <span class="badge bg-success">Ativo</span>
-                        {% else %}
-                            <span class="badge bg-danger">Inativo</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editarUsuario({{ u.id }})">
-                            <i class="fas fa-pencil-alt"></i> Editar
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Profissional</th>
+                        <th>Cargo/Função</th>
+                        <th>Registro (Conselho/DRT)</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ u.get_full_name|default:u.username }}</div>
+                            <div class="small text-muted">{{ u.email }}</div>
+                        </td>
+                        <td>
+                            {% if u.tipo_profissional == 'MED' %}<span class="badge bg-primary">Médico</span>
+                            {% elif u.tipo_profissional == 'ENF' %}<span class="badge bg-success">Enfermeiro</span>
+                            {% elif u.tipo_profissional == 'NUT' %}<span class="badge bg-warning text-dark">Nutricionista</span>
+                            {% elif u.tipo_profissional == 'FAR' %}<span class="badge bg-info text-dark">Farmacêutico</span>
+                            {% else %}<span class="badge bg-secondary">Administrativo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.tipo_registro and u.registro_profissional %}
+                                <strong>{{ u.tipo_registro }}:</strong> {{ u.registro_profissional }}
+                            {% endif %}
+                            {% if u.drt %}
+                                <div class="small text-muted">Matr: {{ u.drt }}</div>
+                            {% endif %}
+                            {% if not u.tipo_registro and not u.drt %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if u.is_active %}
+                                <span class="text-success"><i class="fas fa-check-circle"></i> Ativo</span>
+                            {% else %}
+                                <span class="text-danger"><i class="fas fa-times-circle"></i> Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-secondary" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">Nenhum usuário cadastrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalUsuario" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="modalTitulo">Salvar Usuário</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-
-            <form action="{% url 'salvar_usuario' %}" method="POST">
+            <form method="POST">
                 {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" name="usuario_id" id="usuario_id">
 
-                    <div class="mb-3">
-                        <label>Nome Completo</label>
-                        <input type="text" name="nome" id="nome" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>E-mail (Login)</label>
-                        <input type="email" name="email" id="email" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>DRT</label>
-                        <input type="text" name="drt" id="drt" class="form-control" maxlength="8" required>
-                        <small class="text-muted d-block mt-1" id="avisoSenha">
-                            * No cadastro, o DRT será a senha inicial.
-                        </small>
-                    </div>
-
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" name="ativo" id="ativo" checked>
-                        <label class="form-check-label">Usuário Ativo</label>
-                    </div>
-
-                    <div class="form-check form-switch mt-2">
-                        <input class="form-check-input" type="checkbox" name="mudar_senha" id="mudar_senha" checked>
-                        <label class="form-check-label">Exigir troca de senha no login</label>
-                    </div>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Cadastrar Novo Profissional</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-footer">
+
+                <div class="modal-body">
+
+                    <h6 class="text-primary border-bottom pb-2 mb-3">1. Dados de Acesso e Pessoais</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome Completo</label>
+                            <div class="input-group">
+                                <input type="text" name="first_name" class="form-control" placeholder="Primeiro Nome" required>
+                                <input type="text" name="last_name" class="form-control" placeholder="Sobrenome" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nome de Usuário (Login)</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary border-bottom pb-2 mb-3">2. Dados Profissionais (Obrigatório para Receituário)</h6>
+                    <div class="row g-3 mb-4 bg-light p-3 rounded">
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Tipo de Profissional</label>
+                            <select name="tipo_profissional" class="form-select">
+                                <option value="">Administrativo / Outro</option>
+                                <option value="MED">Médico</option>
+                                <option value="ENF">Enfermeiro</option>
+                                <option value="NUT">Nutricionista</option>
+                                <option value="FAR">Farmacêutico</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Matrícula / DRT</label>
+                            <input type="text" name="drt" class="form-control" placeholder="Opcional">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Sigla do Conselho</label>
+                            <select name="tipo_registro" class="form-select">
+                                <option value="">---</option>
+                                <option value="CRM">CRM (Medicina)</option>
+                                <option value="COREN">COREN (Enfermagem)</option>
+                                <option value="CRN">CRN (Nutrição)</option>
+                                <option value="CRF">CRF (Farmácia)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold">Número do Registro</label>
+                            <input type="text" name="registro_profissional" class="form-control" placeholder="Ex: 123456/SP">
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary border-bottom pb-2 mb-3">3. Segurança</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Senha Inicial</label>
+                            <input type="password" name="password" class="form-control" placeholder="Deixe em branco para senha padrão">
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center mt-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="mudar_senha" id="checkMudarSenha" checked>
+                                <label class="form-check-label" for="checkMudarSenha">Forçar troca de senha no 1º login</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="checkAtivo" checked>
+                                <label class="form-check-label text-success fw-bold" for="checkAtivo">Usuário Ativo</label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i>Salvar Usuário</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<script>
-    // Função para limpar o modal para um novo cadastro
-    function abrirModalNovo() {
-        document.getElementById('modalTitulo').innerText = "Novo Usuário";
-        document.getElementById('usuario_id').value = "";
-        document.getElementById('nome').value = "";
-        document.getElementById('email').value = "";
-        document.getElementById('drt').value = "";
-        document.getElementById('ativo').checked = true;
-        document.getElementById('mudar_senha').checked = true;
-        document.getElementById('avisoSenha').innerText = "* No cadastro, o DRT será a senha inicial.";
-
-        new bootstrap.Modal(document.getElementById('modalUsuario')).show();
-    }
-
-    // Função para buscar dados e preencher modal de edição
-    function editarUsuario(id) {
-        fetch(`/api/usuario/${id}/`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('modalTitulo').innerText = "Editar Usuário";
-                document.getElementById('usuario_id').value = data.id;
-                document.getElementById('nome').value = data.nome;
-                document.getElementById('email').value = data.email;
-                document.getElementById('drt').value = data.drt;
-
-                // Checkboxes
-                document.getElementById('ativo').checked = data.ativo;
-                document.getElementById('mudar_senha').checked = data.mudar_senha;
-
-                document.getElementById('avisoSenha').innerText = "* A edição do DRT não altera a senha atual.";
-
-                new bootstrap.Modal(document.getElementById('modalUsuario')).show();
-            })
-            .catch(error => console.error('Erro ao buscar usuário:', error));
-    }
-</script>
 {% endblock %}

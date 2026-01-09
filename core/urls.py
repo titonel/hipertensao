@@ -21,6 +21,7 @@ urlpatterns = [
     path('atendimento/', views.atendimento_hub, name='atendimento_hub'),
     path('atendimento/multi/<int:paciente_id>/', views.atendimento_multidisciplinar, name='atendimento_multidisciplinar'),
     path('atendimento/prevent/<int:paciente_id>/', views.atendimento_prevent, name='atendimento_prevent'),
+    path('atendimento/pedidos/<int:paciente_id>/', views.gerar_pedido_exames, name='gerar_pedido_exames'),
     path('usuarios/', views.gestao_usuarios, name='gestao_usuarios'),
     path('usuario/salvar', views.salvar_usuario, name='salvar_usuario'),
     path('medicamentos/', views.gestao_medicamentos, name='gestao_medicamentos'),
