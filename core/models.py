@@ -82,3 +82,90 @@ class Afericao(models.Model):
 
     class Meta:
         ordering = ['-data_afericao']
+
+
+class AtendimentoMultidisciplinar(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE, related_name='atendimentos_multi')
+    profissional = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True)
+    data_atendimento = models.DateTimeField(auto_now_add=True)
+
+    # Antropometria
+    peso = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Peso (kg)")
+    altura = models.DecimalField(max_digits=3, decimal_places=2, verbose_name="Altura (m)")
+    imc = models.DecimalField(max_digits=4, decimal_places=2, verbose_name="IMC", blank=True, null=True)
+    circunferencia_abdominal = models.DecimalField(max_digits=5, decimal_places=2,
+                                                   verbose_name="Circunferência Abdominal (cm)")
+
+    # Fatores de Risco / Comorbidades
+    # --- NOVOS CAMPOS: DIABETES ---
+    tem_diabetes = models.BooleanField(default=False)
+    TIPO_DIABETES_CHOICES = [
+        ('1', 'Tipo 1'),
+        ('2', 'Tipo 2'),
+        ('G', 'Gestacional'),
+    ]
+    tipo_diabetes = models.CharField(max_length=1, choices=TIPO_DIABETES_CHOICES, blank=True, null=True)
+
+    # --- NOVOS CAMPOS: TABAGISMO ---
+    fumante = models.BooleanField(default=False)
+    macos_por_dia = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True)
+    anos_fumando = models.IntegerField(blank=True, null=True)
+    carga_tabagica = models.DecimalField(max_digits=6, decimal_places=1, blank=True, null=True,
+                                         verbose_name="Anos-Maço")
+
+    # --- NOVOS CAMPOS: LESÃO DE ÓRGÃO-ALVO (Checkboxes) ---
+    tem_lesao_orgao = models.BooleanField(default=False)
+    loa_coracao = models.BooleanField(default=False, verbose_name="Coração (HVE/IAM)")
+    loa_cerebro = models.BooleanField(default=False, verbose_name="Cérebro (AVC/AIT)")
+    loa_rins = models.BooleanField(default=False, verbose_name="Rins (Doença Renal)")
+    loa_arterias = models.BooleanField(default=False, verbose_name="Artérias Periféricas")
+    loa_olhos = models.BooleanField(default=False, verbose_name="Retinopatia")
+
+    # Observações gerais da equipe (Enfermagem/Farmácia)
+    observacoes = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        # 1. Calcula IMC (Garante conversão para float)
+        if self.peso and self.altura:
+            self.imc = float(self.peso) / (float(self.altura) ** 2)
+
+        # 2. Calcula Carga Tabágica (Maços x Anos)
+        # CORREÇÃO: Converter AMBOS para float antes de multiplicar
+        if self.fumante and self.macos_por_dia and self.anos_fumando:
+            try:
+                maços = float(self.macos_por_dia)
+                anos = float(self.anos_fumando)
+                self.carga_tabagica = maços * anos
+            except ValueError:
+                # Se houver erro de conversão, assume 0
+                self.carga_tabagica = 0
+        else:
+            self.carga_tabagica = 0
+
+        super().save(*args, **kwargs)
+
+    # --- Calculadora PREVENT (AHA/DBH 2025) ---
+class AvaliacaoPrevent(models.Model):
+    paciente = models.ForeignKey(Paciente, on_delete=models.CASCADE)
+    data_avaliacao = models.DateTimeField(auto_now_add=True)
+
+    # Dados Biomédicos (Puxados ou Inseridos)
+    idade = models.IntegerField()
+    sexo = models.CharField(max_length=1)  # M ou F
+    colesterol_total = models.IntegerField(verbose_name="Colesterol Total (mg/dL)")
+    hdl = models.IntegerField(verbose_name="HDL (mg/dL)")
+    pressao_sistolica = models.IntegerField(verbose_name="PAS (mmHg)")
+    em_tratamento_has = models.BooleanField(default=True, verbose_name="Em tto Anti-hipertensivo?")
+    tem_diabetes = models.BooleanField(default=False)
+    fumante = models.BooleanField(default=False)
+    tfg = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="eGFR (ml/min)")
+
+    # Resultados do Cálculo
+    risco_10_anos = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Risco 10 Anos (%)")
+    risco_30_anos = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Risco 30 Anos (%)")
+
+    class Meta:
+        verbose_name = "Avaliação PREVENT"
+
+    def __str__(self):
+        return f"Multi - {self.paciente.nome} - {self.data_atendimento}"

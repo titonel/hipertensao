@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3 class="text-primary mb-3"><i class="fas fa-heartbeat me-2"></i>Calculadora AHA PREVENT™ (2ª Consulta)</h3>
+    
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="POST" id="formPrevent">
+                        {% csrf_token %}
+                        
+                        <h6 class="text-muted fw-bold">1. Dados Demográficos (Automático)</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label>Idade</label>
+                                <input type="number" id="age" value="{{ idade }}" class="form-control bg-light" readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label>Sexo</label>
+                                <input type="text" id="sex" value="{{ paciente.sexo }}" class="form-control bg-light" readonly>
+                            </div>
+                        </div>
+
+                        <h6 class="text-muted fw-bold">2. Parâmetros Clínicos</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <label class="small fw-bold">Colesterol Total (mg/dL)</label>
+                                <input type="number" name="col_total" id="col_total" class="form-control border-primary" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small fw-bold">HDL (mg/dL)</label>
+                                <input type="number" name="hdl" id="hdl" class="form-control border-primary" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small fw-bold">eGFR (ml/min)</label>
+                                <input type="number" step="0.1" name="tfg" id="tfg" class="form-control border-primary" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="small">Pressão Sistólica (mmHg)</label>
+                                <input type="number" name="pas" id="pas" value="{{ pre_pas }}" class="form-control">
+                            </div>
+                            <div class="col-md-6 d-flex align-items-center mt-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="em_tto" id="em_tto" checked>
+                                    <label class="form-check-label">Em uso de Anti-hipertensivo?</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="text-muted fw-bold">3. Histórico (Pré-carregado)</h6>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="diabetes" id="diabetes" {% if pre_diabetes %}checked{% endif %}>
+                                    <label class="form-check-label">Diabetes</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="fumante" id="fumante" {% if pre_fumante %}checked{% endif %}>
+                                    <label class="form-check-label">Tabagista</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="risco_10" id="input_risco_10">
+                        <input type="hidden" name="risco_30" id="input_risco_30">
+
+                        <button type="button" onclick="calcularRisco()" class="btn btn-warning w-100 mb-2 fw-bold">
+                            <i class="fas fa-calculator me-2"></i>Calcular Risco
+                        </button>
+                        
+                        <button type="submit" class="btn btn-success w-100" id="btnSalvar" disabled>
+                            Salvar Avaliação
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-body text-center d-flex flex-column justify-content-center">
+                    <h5 class="text-uppercase text-muted mb-4">Estimativa de Risco (CVD)</h5>
+                    
+                    <div class="mb-5">
+                        <h1 class="display-1 fw-bold text-warning" id="display_10">--%</h1>
+                        <p>Risco em 10 Anos</p>
+                    </div>
+
+                    <div>
+                        <h2 class="display-4 fw-bold text-info" id="display_30">--%</h2>
+                        <p>Risco em 30 Anos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calcularRisco() {
+        // NOTA: Esta é uma simulação da lógica PREVENT para demonstração.
+        // A fórmula real exige coeficientes complexos baseados em raça/sexo.
+        
+        let idade = parseFloat(document.getElementById('age').value);
+        let col = parseFloat(document.getElementById('col_total').value) || 200;
+        let hdl = parseFloat(document.getElementById('hdl').value) || 50;
+        let pas = parseFloat(document.getElementById('pas').value) || 120;
+        let diabetes = document.getElementById('diabetes').checked;
+        let fumante = document.getElementById('fumante').checked;
+
+        // Lógica Fictícia Ponderada (Placeholder)
+        let score = (idade * 0.1) + (pas * 0.05) - (hdl * 0.1) + (col * 0.02);
+        if (diabetes) score += 5;
+        if (fumante) score += 5;
+        
+        // Normalização grosseira para parecer porcentagem
+        let risco10 = Math.min(Math.max((score - 10), 1), 99).toFixed(1);
+        let risco30 = (risco10 * 2.5).toFixed(1);
+
+        // Atualiza a tela
+        document.getElementById('display_10').innerText = risco10 + "%";
+        document.getElementById('display_30').innerText = risco30 + "%";
+        
+        // Preenche inputs ocultos para salvar
+        document.getElementById('input_risco_10').value = risco10;
+        document.getElementById('input_risco_30').value = risco30;
+        
+        // Libera botão salvar
+        document.getElementById('btnSalvar').disabled = false;
+    }
+</script>
+{% endblock %}

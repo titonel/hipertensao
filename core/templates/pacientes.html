@@ -50,7 +50,7 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <a href="{% url 'atendimento' %}?id={{ p.id }}" class="btn btn-sm btn-outline-danger me-1" title="Registrar PA">
+                            <a href="{% url 'atendimento_hub' %}?id={{ p.id }}" class="btn btn-sm btn-outline-danger me-1" title="Registrar PA">
                                 <i class="fas fa-heartbeat"></i>
                             </a>
                             <button class="btn btn-sm btn-outline-primary" onclick="editarPaciente({{ p.id }})" title="Editar Cadastro">

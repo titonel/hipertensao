@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="fas fa-notes-medical text-primary me-2"></i>Prontuário Eletrônico</h2>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="POST" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-10">
+                    <input type="text" name="busca_termo" class="form-control form-control-lg" placeholder="Digite Nome ou CPF..." autofocus>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary btn-lg w-100"><i class="fas fa-search"></i> Buscar</button>
+                </div>
+            </form>
+            {% if erro %}
+                <div class="alert alert-danger mt-3">{{ erro }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if paciente %}
+    <div class="card border-primary mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Paciente Selecionado: {{ paciente.nome }}</h5>
+            <span class="badge bg-light text-primary">{{ paciente.cpf }}</span>
+        </div>
+        <div class="card-body bg-light">
+            <p class="mb-4 text-center text-muted">Selecione a etapa da Linha de Cuidado:</p>
+
+            <div class="row g-4 justify-content-center">
+
+                <div class="col-md-6 col-lg-3">
+                    <a href="{% url 'atendimento_multidisciplinar' paciente.id %}" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm border-0 hover-card text-center py-4">
+                            <div class="card-body">
+                                <i class="fas fa-users-cog fa-3x text-success mb-3"></i>
+                                <h5 class="card-title text-dark">Multi - 1ª Consulta</h5>
+                                <p class="card-text text-muted small">
+                                    Enfermagem e Farmácia.<br>
+                                    Triagem, Antropometria e Hábitos.
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <a href="{% url 'atendimento_prevent' paciente.id %}" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm border-0 hover-card text-center py-4 border-start border-warning border-4">
+                            <div class="card-body">
+                                <i class="fas fa-heartbeat fa-3x text-danger mb-3"></i>
+                                <h5 class="card-title text-dark">Multi - 2ª Consulta</h5>
+                                <p class="card-text text-muted small">
+                                    Calculadora AHA PREVENT™.<br>
+                                    Estratificação de Risco CV.
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <a href="#" class="text-decoration-none" onclick="alert('Módulo Médico em desenvolvimento')">
+                        <div class="card h-100 shadow-sm border-0 hover-card text-center py-4">
+                            <div class="card-body">
+                                <i class="fas fa-user-md fa-3x text-primary mb-3"></i>
+                                <h5 class="card-title text-dark">Médico</h5>
+                                <p class="card-text text-muted small">
+                                    Consulta Clínica.<br>
+                                    Prescrição e Conduta.
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-3">
+                    <a href="#" class="text-decoration-none" onclick="alert('Módulo Nutricional em desenvolvimento')">
+                        <div class="card h-100 shadow-sm border-0 hover-card text-center py-4">
+                            <div class="card-body">
+                                <i class="fas fa-apple-alt fa-3x text-warning mb-3"></i>
+                                <h5 class="card-title text-dark">Nutricional</h5>
+                                <p class="card-text text-muted small">
+                                    Plano Alimentar.<br>
+                                    Orientações Dietéticas (DASH).
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Efeito visual ao passar o mouse */
+    .hover-card {
+        transition: transform 0.3s, background-color 0.3s;
+    }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        background-color: #f8f9fa;
+        border: 1px solid #004587 !important; /* Azul Seconci */
+    }
+</style>
+{% endblock %}

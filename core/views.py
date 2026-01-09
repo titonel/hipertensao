@@ -12,9 +12,13 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.conf import settings
 from datetime import datetime, date
-from .models import Paciente, Afericao, Medicamento, Usuario
+from .models import Paciente, Medicamento, Afericao, Usuario, AtendimentoMultidisciplinar, AvaliacaoPrevent
 from .forms import PacienteForm, UsuarioForm
 
+# Função auxiliar para idade
+def calcular_idade(nascimento):
+    hoje = date.today()
+    return hoje.year - nascimento.year - ((hoje.month, hoje.day) < (nascimento.month, nascimento.day))
 
 # Função auxiliar para converter imagem em Base64
 def get_base64_image(filename):
@@ -334,6 +338,74 @@ def atendimento(request):
 
 
 @login_required
+def atendimento_hub(request):
+    """
+    Tela inicial do Atendimento (PEP).
+    1. Busca o paciente.
+    2. Se encontrar, mostra os 3 cartões de opção (Médico, Multi, Nutrição).
+    """
+    paciente = None
+    erro = None
+
+    if request.method == 'POST':
+        termo = request.POST.get('busca_termo')
+        # Tenta buscar por CPF ou Nome
+        pacientes = Paciente.objects.filter(cpf=termo) | Paciente.objects.filter(nome__icontains=termo)
+
+        if pacientes.exists():
+            paciente = pacientes.first()  # Pega o primeiro encontrado
+        else:
+            erro = "Paciente não encontrado."
+
+    return render(request, 'atendimento_hub.html', {'paciente': paciente, 'erro': erro})
+
+@login_required
+def atendimento_multidisciplinar(request, paciente_id):
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    idade = calcular_idade(paciente.data_nascimento)
+
+    if request.method == 'POST':
+        # Criação do objeto com TODOS os novos campos
+        AtendimentoMultidisciplinar.objects.create(
+            paciente=paciente,
+            profissional=request.user,
+
+            # Antropometria
+            peso=request.POST.get('peso').replace(',', '.'),
+            altura=request.POST.get('altura').replace(',', '.'),
+            circunferencia_abdominal=request.POST.get('circunf').replace(',', '.'),
+
+            # Diabetes (Lógica condicional)
+            tem_diabetes=True if request.POST.get('diabetes') == 'on' else False,
+            tipo_diabetes=request.POST.get('tipo_diabetes'),  # Vem do Select
+
+            # Tabagismo (Lógica condicional)
+            # Tabagismo (Convertendo para números explicitamente)
+            fumante=True if request.POST.get('fumante') == 'on' else False,
+
+            macos_por_dia=float(request.POST.get('macos').replace(',', '.')) if request.POST.get('macos') else 0,
+
+            anos_fumando=int(request.POST.get('anos_fumando')) if request.POST.get('anos_fumando') else 0,
+
+            # LOA (Checkboxes individuais)
+            tem_lesao_orgao=True if request.POST.get('tem_loa') == 'on' else False,
+            loa_coracao=True if request.POST.get('loa_coracao') == 'on' else False,
+            loa_cerebro=True if request.POST.get('loa_cerebro') == 'on' else False,
+            loa_rins=True if request.POST.get('loa_rins') == 'on' else False,
+            loa_arterias=True if request.POST.get('loa_arterias') == 'on' else False,
+            loa_olhos=True if request.POST.get('loa_olhos') == 'on' else False,
+
+            observacoes=request.POST.get('obs')
+        )
+        return redirect('atendimento_hub')
+
+    return render(request, 'atendimento_multidisciplinar.html', {
+        'paciente': paciente,
+        'idade': idade
+    })
+
+
+@login_required
 def registrar_afericao(request):
     if request.method == 'POST':
         paciente = get_object_or_404(Paciente, id=request.POST.get('paciente_id'))
@@ -506,3 +578,55 @@ def api_usuario(request, id):
         'ativo': u.is_active,
         'mudar_senha': u.mudar_senha
     })
+
+
+@login_required
+def atendimento_prevent(request, paciente_id):
+    """
+    Calculadora PREVENT (AHA) - 2ª Consulta.
+    """
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    idade = calcular_idade(paciente.data_nascimento)
+
+    # Busca dados prévios para facilitar o preenchimento
+    ultimo_multi = paciente.atendimentos_multi.last()
+    ultima_afericao = paciente.afericoes.order_by('-data_afericao').first()
+
+    if request.method == 'POST':
+        # Salva o resultado do cálculo
+        try:
+            AvaliacaoPrevent.objects.create(
+                paciente=paciente,
+                idade=idade,
+                sexo=paciente.sexo,
+
+                # Dados clínicos
+                colesterol_total=request.POST.get('col_total'),
+                hdl=request.POST.get('hdl'),
+                pressao_sistolica=request.POST.get('pas'),
+                tfg=request.POST.get('tfg').replace(',', '.'),
+
+                # Booleanos (Checkboxes)
+                em_tratamento_has=True if request.POST.get('em_tto') == 'on' else False,
+                tem_diabetes=True if request.POST.get('diabetes') == 'on' else False,
+                fumante=True if request.POST.get('fumante') == 'on' else False,
+
+                # Resultados Calculados (Vêm do JavaScript nos inputs hidden)
+                risco_10_anos=request.POST.get('risco_10').replace(',', '.'),
+                risco_30_anos=request.POST.get('risco_30').replace(',', '.')
+            )
+            return redirect('atendimento_hub')
+
+        except Exception as e:
+            # Se der erro (ex: campo vazio), imprime no console para debug
+            print(f"Erro ao salvar PREVENT: {e}")
+
+    context = {
+        'paciente': paciente,
+        'idade': idade,
+        # Pré-preenchimento inteligente
+        'pre_diabetes': ultimo_multi.tem_diabetes if ultimo_multi else False,
+        'pre_fumante': ultimo_multi.fumante if ultimo_multi else False,
+        'pre_pas': ultima_afericao.pressao_sistolica if ultima_afericao else ''
+    }
+    return render(request, 'atendimento_prevent.html', context)

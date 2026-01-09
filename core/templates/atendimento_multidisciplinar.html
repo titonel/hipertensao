@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-primary border-4 shadow-sm mb-4">
+        <div class="card-body">
+            <h3 class="text-primary fw-bold">{{ paciente.nome }}</h3>
+            <span class="badge bg-secondary">Idade: {{ idade }}</span>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Avaliação Multidisciplinar - 1ª Consulta</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+
+                <h6 class="text-success border-bottom pb-2">1. Antropometria</h6>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label>Peso (kg)</label>
+                        <input type="number" step="0.1" name="peso" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Altura (m)</label>
+                        <input type="number" step="0.01" name="altura" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Circunf. Abd (cm)</label>
+                        <input type="number" step="0.1" name="circunf" class="form-control" required>
+                    </div>
+                </div>
+
+                <h6 class="text-success border-bottom pb-2">2. Comorbidades e Hábitos</h6>
+
+                <div class="card bg-light border-0 mb-3">
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="diabetes" id="checkDiabetes" onchange="toggleDiabetes()">
+                            <label class="form-check-label fw-bold">Paciente possui Diabetes?</label>
+                        </div>
+
+                        <div id="divTipoDiabetes" class="d-none ms-4">
+                            <label class="small text-muted">Qual o tipo?</label>
+                            <select name="tipo_diabetes" class="form-select w-50">
+                                <option value="" selected>Selecione...</option>
+                                <option value="1">Tipo 1</option>
+                                <option value="2">Tipo 2</option>
+                                <option value="G">Gestacional</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-light border-0 mb-3">
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="fumante" id="checkFumante" onchange="toggleFumante()">
+                            <label class="form-check-label fw-bold">Paciente é tabagista?</label>
+                        </div>
+
+                        <div id="divFumante" class="d-none ms-4 row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="small">Maços por dia</label>
+                                <input type="number" step="0.1" name="macos" id="inputMacos" class="form-control" placeholder="Ex: 1.5">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small">Anos fumando</label>
+                                <input type="number" name="anos_fumando" id="inputAnos" class="form-control" placeholder="Ex: 20">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small text-muted">Carga Tabágica (Anos-Maço)</label>
+                                <input type="text" id="displayCarga" class="form-control bg-white fw-bold text-danger" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-light border-0 mb-3">
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="tem_loa" id="checkLoa" onchange="toggleLoa()">
+                            <label class="form-check-label fw-bold">Possui Lesão de Órgão-Alvo (LOA)?</label>
+                        </div>
+
+                        <div id="divLoa" class="d-none ms-4 mt-2">
+                            <p class="small text-muted mb-1">Selecione as lesões identificadas:</p>
+                            <div class="row">
+                                <div class="col-md-4"><input type="checkbox" name="loa_coracao"> Coração (IAM/HVE)</div>
+                                <div class="col-md-4"><input type="checkbox" name="loa_cerebro"> Cérebro (AVC)</div>
+                                <div class="col-md-4"><input type="checkbox" name="loa_rins"> Rins (DRC)</div>
+                                <div class="col-md-4"><input type="checkbox" name="loa_olhos"> Olhos (Retinopatia)</div>
+                                <div class="col-md-4"><input type="checkbox" name="loa_arterias"> Artérias Periféricas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label>Observações</label>
+                    <textarea name="obs" class="form-control"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100">Salvar Dados</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. Toggle Diabetes
+    function toggleDiabetes() {
+        const check = document.getElementById('checkDiabetes');
+        const div = document.getElementById('divTipoDiabetes');
+        div.className = check.checked ? 'd-block ms-4' : 'd-none ms-4';
+    }
+
+    // 2. Toggle Fumante e Calculadora
+    function toggleFumante() {
+        const check = document.getElementById('checkFumante');
+        const div = document.getElementById('divFumante');
+        div.className = check.checked ? 'd-flex ms-4 row g-3 align-items-end' : 'd-none ms-4 row g-3';
+    }
+
+    // Calculadora Anos-Maço
+    const inMacos = document.getElementById('inputMacos');
+    const inAnos = document.getElementById('inputAnos');
+    const displayCarga = document.getElementById('displayCarga');
+
+    function calcCarga() {
+        const macos = parseFloat(inMacos.value) || 0;
+        const anos = parseFloat(inAnos.value) || 0;
+        if (macos > 0 && anos > 0) {
+            displayCarga.value = (macos * anos).toFixed(1);
+        }
+    }
+    inMacos.addEventListener('input', calcCarga);
+    inAnos.addEventListener('input', calcCarga);
+
+    // 3. Toggle LOA
+    function toggleLoa() {
+        const check = document.getElementById('checkLoa');
+        const div = document.getElementById('divLoa');
+        div.className = check.checked ? 'd-block ms-4 mt-2' : 'd-none ms-4 mt-2';
+    }
+</script>
+{% endblock %}
