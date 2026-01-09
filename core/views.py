@@ -379,8 +379,7 @@ def atendimento_multidisciplinar(request, paciente_id):
             tem_diabetes=True if request.POST.get('diabetes') == 'on' else False,
             tipo_diabetes=request.POST.get('tipo_diabetes'),  # Vem do Select
 
-            # Tabagismo (Lógica condicional)
-            # Tabagismo (Convertendo para números explicitamente)
+            # Tabagismo (Lógica condicional convertendo para números explicitamente)
             fumante=True if request.POST.get('fumante') == 'on' else False,
 
             macos_por_dia=float(request.POST.get('macos').replace(',', '.')) if request.POST.get('macos') else 0,
