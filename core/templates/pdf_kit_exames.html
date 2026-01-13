@@ -1,0 +1,80 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Protocolo de Exames - {{ paciente.nome }}</title>
+    <style>
+        @page { size: a4 portrait; margin: 1.5cm; }
+        body { font-family: Helvetica, Arial, sans-serif; color: #000; }
+        .header-img-container { text-align: center; margin-bottom: 20px; }
+        .header-img { height: 3.0cm; width: auto; }
+        .dados-paciente { border: 1px solid #000; padding: 10px; margin-bottom: 20px; background-color: #f9f9f9; font-size: 11pt; }
+        .titulo-pedido { font-size: 14pt; font-weight: bold; text-align: center; margin-bottom: 20px; text-transform: uppercase; text-decoration: underline; color: #004587; }
+        .lista-exames { font-size: 12pt; margin-left: 20px; margin-bottom: 30px; line-height: 1.5; }
+        .assinatura-box { margin-top: 50px; text-align: center; width: 100%; }
+        .linha-assinatura { border-top: 1px solid #000; width: 60%; margin: 0 auto; padding-top: 5px; font-size: 10pt; }
+        .destaque { font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header-img-container">
+        {% if header_b64 %}<img src="data:image/png;base64,{{ header_b64 }}" class="header-img"/>{% endif %}
+    </div>
+
+    <div class="dados-paciente">
+        <div><strong>Paciente:</strong> {{ paciente.nome }}</div>
+        <div><strong>CPF:</strong> {{ paciente.cpf }} &nbsp;|&nbsp; <strong>Idade:</strong> {{ idade }} anos</div>
+    </div>
+
+    <div class="titulo-pedido">Protocolo de Investigação Inicial (DBH 2025)</div>
+    <p>Solicitação de Exames Laboratoriais:</p>
+
+    <ul class="lista-exames">
+        <li>Análise de Urina (EAS / Tipo I)</li>
+        <li>Potássio plasmático</li>
+        <li>Creatinina plasmática <span class="destaque">(com cálculo de TFGe)</span></li>
+        <li>Relação Albuminúria/Creatininúria (RAC) - Amostra isolada</li>
+        <li>Glicemia de jejum</li>
+        <li>Hemoglobina Glicada (HbA1c)</li>
+        <li>Perfil Lipídico (Colesterol Total, HDL-c, LDL-c, Triglicerídeos)</li>
+        <li>Ácido Úrico plasmático</li>
+    </ul>
+
+    <div class="assinatura-box">
+        <div class="linha-assinatura">
+            <strong>{{ usuario.get_full_name|default:"Equipe Multidisciplinar" }}</strong><br>
+            {{ usuario.tipo_registro }}: {{ usuario.registro_profissional }}<br>
+            AME Caraguatatuba - {{ data_hoje|date:"d/m/Y" }}
+        </div>
+    </div>
+
+    <pdf:nextpage />
+
+    <div class="header-img-container">
+        {% if header_b64 %}<img src="data:image/png;base64,{{ header_b64 }}" class="header-img"/>{% endif %}
+    </div>
+
+    <div class="dados-paciente">
+        <div><strong>Paciente:</strong> {{ paciente.nome }}</div>
+        <div><strong>CPF:</strong> {{ paciente.cpf }}</div>
+    </div>
+
+    <div class="titulo-pedido">Solicitação de Exame Complementar</div>
+
+    <div style="border: 2px dashed #004587; padding: 30px; text-align: center; margin: 40px 0;">
+        <h2 style="margin: 0;">Eletrocardiograma (ECG)</h2>
+        <p>Convencional de 12 derivações</p>
+    </div>
+
+    <div class="assinatura-box">
+        <div class="linha-assinatura">
+            <strong>{{ usuario.get_full_name }}</strong><br>
+            {{ usuario.tipo_registro }}: {{ usuario.registro_profissional }}<br>
+            AME Caraguatatuba - {{ data_hoje|date:"d/m/Y" }}
+        </div>
+    </div>
+
+</body>
+</html>

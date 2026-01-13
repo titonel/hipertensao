@@ -361,50 +361,164 @@ def atendimento_hub(request):
 
     return render(request, 'atendimento_hub.html', {'paciente': paciente, 'erro': erro})
 
+
 @login_required
 def atendimento_multidisciplinar(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
     idade = calcular_idade(paciente.data_nascimento)
 
+    # Busca a última PA registrada para a decisão clínica
+    ultima_afericao = paciente.afericoes.first()  # Model ordena por -data_afericao
+
     if request.method == 'POST':
-        # Criação do objeto com TODOS os novos campos
+        # 1. Coleta dados do formulário
+        peso = request.POST.get('peso').replace(',', '.')
+        altura = request.POST.get('altura').replace(',', '.')
+        circunf = request.POST.get('circunf').replace(',', '.')
+
+        # Booleanos e Checkboxes
+        tem_diabetes = True if request.POST.get('diabetes') == 'on' else False
+        fumante = True if request.POST.get('fumante') == 'on' else False
+
+        # Lesões de Órgão Alvo (LOA)
+        loa_coracao = True if request.POST.get('loa_coracao') == 'on' else False
+        loa_cerebro = True if request.POST.get('loa_cerebro') == 'on' else False
+        loa_rins = True if request.POST.get('loa_rins') == 'on' else False
+        loa_arterias = True if request.POST.get('loa_arterias') == 'on' else False
+        loa_olhos = True if request.POST.get('loa_olhos') == 'on' else False
+
+        tem_loa = any([loa_coracao, loa_cerebro, loa_rins, loa_arterias, loa_olhos,
+                       request.POST.get('tem_loa') == 'on'])
+
+        # 2. Salva o Atendimento no Banco
         AtendimentoMultidisciplinar.objects.create(
             paciente=paciente,
             profissional=request.user,
-
-            # Antropometria
-            peso=request.POST.get('peso').replace(',', '.'),
-            altura=request.POST.get('altura').replace(',', '.'),
-            circunferencia_abdominal=request.POST.get('circunf').replace(',', '.'),
-
-            # Diabetes (Lógica condicional)
-            tem_diabetes=True if request.POST.get('diabetes') == 'on' else False,
-            tipo_diabetes=request.POST.get('tipo_diabetes'),  # Vem do Select
-
-            # Tabagismo (Lógica condicional convertendo para números explicitamente)
-            fumante=True if request.POST.get('fumante') == 'on' else False,
-
+            peso=peso,
+            altura=altura,
+            circunferencia_abdominal=circunf,
+            tem_diabetes=tem_diabetes,
+            tipo_diabetes=request.POST.get('tipo_diabetes'),
+            fumante=fumante,
             macos_por_dia=float(request.POST.get('macos').replace(',', '.')) if request.POST.get('macos') else 0,
-
             anos_fumando=int(request.POST.get('anos_fumando')) if request.POST.get('anos_fumando') else 0,
-
-            # LOA (Checkboxes individuais)
-            tem_lesao_orgao=True if request.POST.get('tem_loa') == 'on' else False,
-            loa_coracao=True if request.POST.get('loa_coracao') == 'on' else False,
-            loa_cerebro=True if request.POST.get('loa_cerebro') == 'on' else False,
-            loa_rins=True if request.POST.get('loa_rins') == 'on' else False,
-            loa_arterias=True if request.POST.get('loa_arterias') == 'on' else False,
-            loa_olhos=True if request.POST.get('loa_olhos') == 'on' else False,
-
+            tem_lesao_orgao=tem_loa,
+            loa_coracao=loa_coracao,
+            loa_cerebro=loa_cerebro,
+            loa_rins=loa_rins,
+            loa_arterias=loa_arterias,
+            loa_olhos=loa_olhos,
             observacoes=request.POST.get('obs')
         )
-        return redirect('atendimento_hub')
+
+        # 3. LÓGICA DE DECISÃO AUTOMÁTICA (Diretriz 2025)
+        eligible = False
+        motivo_ineligivel = ""
+
+        if not ultima_afericao:
+            # Se não tem PA medida, assume elegível por precaução ou trata erro
+            messages.warning(request, "Atenção: Paciente sem aferição de PA recente.")
+            eligible = True
+        else:
+            pas = ultima_afericao.pressao_sistolica
+            pad = ultima_afericao.pressao_diastolica
+
+            # Estágio 2 ou 3 (PAS >= 140 OU PAD >= 90)
+            is_estagio_2_plus = (pas >= 140) or (pad >= 90)
+
+            # Estágio 1 (PAS 130-139 OU PAD 80-89)
+            is_estagio_1 = (130 <= pas < 140) or (80 <= pad < 90)
+
+            # Critérios de Inclusão AME:
+            # 1. HAS Estágio 2 ou 3 (independente de risco)
+            # 2. HAS Estágio 1 COM Alto Risco (Diabetes, LOA ou DRC)
+
+            has_alto_risco = tem_diabetes or tem_loa or loa_rins
+
+            if is_estagio_2_plus:
+                eligible = True
+            elif is_estagio_1 and has_alto_risco:
+                eligible = True
+            else:
+                eligible = False
+                if is_estagio_1:
+                    motivo_ineligivel = "PA limítrofe ou Estágio 1 sem alto risco cardiovascular."
+                else:
+                    motivo_ineligivel = "Hipertensão controlada ou PA normal."
+
+        # 4. Redirecionamento Baseado na Decisão
+        if eligible:
+            messages.success(request, "Paciente ELEGÍVEL. Gerando Kit de Exames...")
+            return redirect('gerar_kit_exames', paciente_id=paciente.id)
+        else:
+            # Salva o motivo na sessão temporária ou passa via GET (simplificado aqui via sessão)
+            request.session['motivo_contrarreferencia'] = motivo_ineligivel
+            messages.warning(request, "Paciente NÃO ELEGÍVEL. Gerando Contrarreferência...")
+            return redirect('gerar_contrarreferencia_triagem', paciente_id=paciente.id)
 
     return render(request, 'atendimento_multidisciplinar.html', {
         'paciente': paciente,
         'idade': idade
     })
 
+
+@login_required
+def gerar_kit_exames(request, paciente_id):
+    """Gera o Kit de Exames atualizado (Diretriz 2025) para pacientes elegíveis"""
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    idade = calcular_idade(paciente.data_nascimento)
+    header_b64 = get_base64_image('header.png')
+
+    context = {
+        'paciente': paciente,
+        'idade': idade,
+        'usuario': request.user,
+        'data_hoje': date.today(),
+        'header_b64': header_b64,
+    }
+
+    template_path = 'pdf_kit_exames.html'  # Vamos criar este arquivo
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="kit_exames_{paciente.nome}.pdf"'
+
+    template = get_template(template_path)
+    html = template.render(context)
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse(f'Erro PDF: {pisa_status.err}')
+    return response
+
+
+@login_required
+def gerar_contrarreferencia_triagem(request, paciente_id):
+    """Gera Contrarreferência imediata para pacientes não elegíveis na triagem"""
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    motivo = request.session.get('motivo_contrarreferencia', 'Critérios de elegibilidade não atingidos.')
+
+    header_b64 = get_base64_image('header.png')
+    footer_b64 = get_base64_image('footer.png')
+
+    context = {
+        'paciente': paciente,
+        'usuario': request.user,
+        'hoje': date.today(),
+        'motivo': motivo,
+        'header_b64': header_b64,
+        'footer_b64': footer_b64,
+    }
+
+    template_path = 'pdf_contrarreferencia_triagem.html'  # Vamos criar este arquivo
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="contrarreferencia_{paciente.nome}.pdf"'
+
+    template = get_template(template_path)
+    html = template.render(context)
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse(f'Erro PDF: {pisa_status.err}')
+    return response
 
 @login_required
 def registrar_afericao(request):

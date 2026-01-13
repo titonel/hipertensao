@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Contrarreferência - {{ paciente.nome }}</title>
+    <style>
+        @page {
+            size: a4 portrait; margin: 1cm;
+            @frame header_frame { -pdf-frame-content: header_content; left: 1cm; width: 19cm; top: 0.5cm; height: 3.5cm; }
+            @frame footer_frame { -pdf-frame-content: footer_content; left: 1cm; width: 19cm; top: 26.5cm; height: 3cm; }
+            @frame content_frame { left: 1cm; width: 19cm; top: 4.2cm; height: 21.8cm; }
+        }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10pt; color: #000; }
+        #header_content, #footer_content { text-align: center; }
+        .img-fixa-header { height: 3.2cm; width: auto; }
+        .img-fixa-footer { width: 100%; height: auto; max-height: 2.5cm; }
+        .titulo-principal { color: #004587; font-size: 14pt; font-weight: bold; text-align: center; margin-bottom: 10px; }
+        .dados-paciente { text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; }
+        .bloco { border: 1px solid #000; padding: 10px; margin-bottom: 10px; background-color: #fcfcfc; }
+        .bloco-titulo { color: #F26522; font-size: 11pt; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 5px; }
+        .subtitulo { color: #004587; font-weight: bold; margin-top: 10px; }
+        .check-box { margin-bottom: 5px; }
+        .assinatura-box { margin-top: 30px; text-align: center; }
+        .linha-assinatura { border-top: 1px solid #000; width: 70%; margin: 0 auto; padding-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="header_content">
+        {% if header_b64 %}<img src="data:image/png;base64,{{ header_b64 }}" class="img-fixa-header" />{% endif %}
+    </div>
+
+    <div id="footer_content">
+        {% if footer_b64 %}<img src="data:image/png;base64,{{ footer_b64 }}" class="img-fixa-footer" />{% endif %}
+    </div>
+
+    <div class="titulo-principal">CONTRARREFERÊNCIA - TRIAGEM MULTIDISCIPLINAR</div>
+
+    <div class="dados-paciente">
+        <strong>Paciente:</strong> {{ paciente.nome }} &nbsp;|&nbsp; <strong>CPF:</strong> {{ paciente.cpf }}<br>
+        <strong>Data do Atendimento:</strong> {{ hoje|date:"d/m/Y" }}
+    </div>
+
+    <div class="bloco">
+        <div class="bloco-titulo">MOTIVO DA DEVOLUÇÃO À APS</div>
+        <p>Prezado(a) colega,</p>
+        <p>O paciente foi avaliado pela equipe multidisciplinar e, neste momento, <strong>não preenche os critérios de elegibilidade</strong> para seguimento secundário no AME (Hipertensão Estágio 2/3, Resistente ou Alto Risco CV evidente).</p>
+
+        <div class="subtitulo">Justificativa do Sistema:</div>
+        <div style="border: 1px dashed #666; padding: 5px; background: #eee; margin: 5px 0;">
+            {{ motivo }}
+        </div>
+
+        <div class="subtitulo">Conduta Realizada:</div>
+        <ul>
+            <li>Acolhimento e Aferição da PA.</li>
+            <li>Rastreamento de comorbidades.</li>
+            <li>Orientação sobre adesão e medidas não medicamentosas.</li>
+        </ul>
+
+        <div class="subtitulo">Sugestão de Plano de Cuidado na UBS:</div>
+        <ul>
+            <li>Monitoramento periódico da Pressão Arterial.</li>
+            <li>Intensificação das mudanças de estilo de vida (MEV).</li>
+            <li>Reavaliação médica na Atenção Primária para ajuste posológico se necessário.</li>
+        </ul>
+    </div>
+
+    <div class="assinatura-box">
+        <div class="linha-assinatura">
+            <strong>{{ usuario.get_full_name|default:"Profissional AME" }}</strong><br>
+            Equipe Multidisciplinar - AME Caraguatatuba
+        </div>
+    </div>
+
+    <pdf:nextpage />
+
+    <div class="titulo-principal">ORIENTAÇÕES AO PACIENTE</div>
+
+    <div class="bloco">
+        <div class="bloco-titulo">MINHA SAÚDE EM DIA</div>
+
+        <div class="subtitulo">🥗 Mudanças de Vida (O que fazer em casa):</div>
+        <table style="width: 100%; margin-top: 5px;">
+            <tr>
+                <td style="vertical-align: top; padding: 5px;">
+                    <strong>Sal:</strong> Use pouco sal. Evite temperos prontos (cubos), embutidos (presunto, salame) e enlatados.<br><br>
+                    <strong>Peso:</strong> Manter o peso controlado ajuda o remédio a funcionar melhor.
+                </td>
+                <td style="vertical-align: top; padding: 5px;">
+                    <strong>Movimento:</strong> Tente caminhar pelo menos 30 minutos, 3 a 5 vezes por semana.<br><br>
+                    <strong>Vícios:</strong> Se fuma, peça ajuda na UBS para parar. Evite excesso de álcool.
+                </td>
+            </tr>
+        </table>
+
+        <div class="subtitulo">🚨 Sinais de Alerta (Quando procurar o Pronto Socorro):</div>
+        <p style="color: red; font-weight: bold;">
+            Vá imediatamente se a pressão subir muito E você sentir: Dor forte no peito, falta de ar súbita, dor de cabeça muito forte ou fraqueza de um lado do corpo.
+        </p>
+    </div>
+
+    <div style="margin-top: 40px; border: 1px dashed #000; padding: 15px; font-size: 9pt;">
+        <strong>Declaração de Ciência:</strong><br><br>
+        Recebi a contrarreferência e as orientações. Compreendo que devo entregar este documento na minha Unidade Básica de Saúde (UBS) para continuar meu acompanhamento.<br><br>
+        <div style="text-align: center; margin-top: 20px;">
+            _________________________________________________________<br>
+            <strong>{{ paciente.nome }}</strong><br>
+            Assinatura do Paciente / Responsável
+        </div>
+    </div>
+
+</body>
+</html>
