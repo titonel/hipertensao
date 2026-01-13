@@ -1,5 +1,7 @@
 import os
 import base64  # <--- ADICIONE ESTA LINHA AQUI
+import requests
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.staticfiles import finders
 from django.contrib.auth.decorators import login_required
@@ -11,7 +13,7 @@ from django.http import JsonResponse, HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.conf import settings
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from .models import Paciente, Medicamento, Afericao, Usuario, AtendimentoMultidisciplinar, AvaliacaoPrevent
 from .forms import PacienteForm, UsuarioForm
 
@@ -689,3 +691,107 @@ def atendimento_prevent(request, paciente_id):
         'pre_pas': ultima_afericao.pressao_sistolica if ultima_afericao else ''
     }
     return render(request, 'atendimento_prevent.html', context)
+
+@login_required
+def monitoramento_busca(request):
+    """
+    Tela inicial do Monitoramento: Busca de Paciente.
+    """
+    erro = None
+    if request.method == 'POST':
+        termo = request.POST.get('busca_termo')
+
+        # Busca por Nome, CPF ou SIRESP (Agora o campo existe!)
+        pacientes = Paciente.objects.filter(
+            nome__icontains=termo
+        ) | Paciente.objects.filter(
+            cpf=termo
+        ) | Paciente.objects.filter(
+            siresp=termo
+        )
+
+        # CORREÇÃO AQUI: A variável correta é 'pacientes' (português), não 'patients'
+        if pacientes.exists():
+            # Redireciona para o primeiro encontrado
+            return redirect('monitoramento_painel', paciente_id=pacientes.first().id)
+        else:
+            erro = "Paciente não encontrado com esses dados."
+
+    return render(request, 'monitoramento_busca.html', {'erro': erro})
+
+
+@login_required
+def monitoramento_painel(request, paciente_id):
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+
+    # 1. Contadores Internos
+    # Assumindo que você tem relação inversa ou models definidos
+    qtd_multi = AtendimentoMultidisciplinar.objects.filter(paciente=paciente).count()
+    # qtd_medico = AtendimentoMedico.objects.filter(paciente=paciente).count() # (Descomente quando criar o model Médico)
+    qtd_medico = 0  # Placeholder enquanto não cria o médico
+
+    # 2. Integração API Laboratório
+    exames_lista = []
+    erro_api = None
+
+    # Limpa CPF (remove pontos e traços)
+    cpf_limpo = paciente.cpf.replace('.', '').replace('-', '')
+
+    url_api = f"http://172.15.0.152:5897/api/laboratorio/{cpf_limpo}"
+
+    try:
+        # Tenta conectar com timeout de 5 segundos para não travar o sistema
+        response = requests.get(url_api, timeout=5)
+
+        if response.status_code == 200:
+            dados_brutos = response.json()
+
+            # Itera sobre a lista de exames retornada
+            for item in dados_brutos:
+                # O item deve ser uma lista onde item[2] é data, item[5] exame, item[7] status
+
+                # A. Tratamento da Data (Linha 2)
+                try:
+                    raw_timestamp = item[2]  # "2025-01-13T14:30:00.000Z"
+                    data_part, hora_part = raw_timestamp.split('T')
+                    hora_part = hora_part.split('.')[0]  # Remove milissegundos
+
+                    # Conversão GMT para GMT-3 (Subtrair 3 horas)
+                    dt_obj = datetime.strptime(f"{data_part} {hora_part}", "%Y-%m-%d %H:%M:%S")
+                    dt_local = dt_obj - timedelta(hours=3)
+
+                    data_final = dt_local.strftime("%d/%m/%Y")
+                    hora_final = dt_local.strftime("%H:%M")
+                except:
+                    data_final = "--/--/----"
+                    hora_final = "--:--"
+
+                # B. Tratamento do Status (Linha 7)
+                status_raw = item[7]
+                status_cor = "bg-success" if status_raw == "LIBERADO" else "bg-danger"
+
+                # Monta o objeto para o template
+                exame = {
+                    'data': data_final,
+                    'hora': hora_final,
+                    'nome_exame': item[5],  # Linha 5
+                    'status_texto': status_raw,
+                    'status_cor': status_cor
+                }
+                exames_lista.append(exame)
+        else:
+            erro_api = f"API retornou status {response.status_code}"
+
+    except requests.exceptions.RequestException:
+        erro_api = "Sistema de Laboratório indisponível (Erro de Conexão)"
+    except Exception as e:
+        erro_api = f"Erro ao processar dados: {str(e)}"
+
+    context = {
+        'paciente': paciente,
+        'qtd_multi': qtd_multi,
+        'qtd_medico': qtd_medico,
+        'exames': exames_lista,
+        'erro_api': erro_api
+    }
+    return render(request, 'monitoramento_painel.html', context)

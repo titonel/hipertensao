@@ -108,6 +108,7 @@ class Paciente(models.Model):
     municipio = models.CharField(max_length=100, default='Caraguatatuba')
     telefone = models.CharField(max_length=20, blank=True)
     ativo = models.BooleanField(default=True)
+    siresp = models.CharField(max_length=20, null=True, blank=True, verbose_name="Número CROSS / SIRESP")
 
     # Memória da última altura
     altura_ultima = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)

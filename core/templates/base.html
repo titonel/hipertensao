@@ -1,86 +1,75 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AME Caraguatatuba - Hipertensão</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
     <style>
-        body { background-color: #f8f9fa; }
-        .navbar-brand { font-weight: bold; }
+        /* Estilos simples para o menu lateral */
+        body { min-height: 100vh; display: flex; flex-direction: column; }
+        .wrapper { display: flex; flex: 1; }
+        .sidebar { min-width: 250px; background-color: #004587; color: white; min-height: 100vh; }
+        .sidebar a { color: rgba(255,255,255,0.8); text-decoration: none; padding: 15px; display: block; }
+        .sidebar a:hover { background-color: #003366; color: white; }
+        .sidebar a.active { background-color: #F26522; color: white; }
+        .content { flex: 1; padding: 20px; background-color: #f8f9fa; }
     </style>
-    {% load static %}
-    <link href="{% static 'css/style.css' %}" rel="stylesheet">
 </head>
 <body>
 
-    {% if user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'index' %}">
-                <i class="fas fa-heartbeat text-danger me-2"></i>Hipertensão Arterial
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'index' %}">Início</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'gestao_pacientes' %}">Pacientes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'atendimento_hub' %}"><i class="fas fa-user-nurse"></i>Atendimento</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'gestao_medicamentos' %}">Medicamentos</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'gestao_usuarios' %}">Usuários</a>
-                    </li>
-                </ul>
-
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i> {{ user.first_name|default:user.username }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{% url 'trocar_senha' %}">
-                                <i class="fas fa-key me-2"></i>Trocar Senha
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <form action="{% url 'logout' %}" method="post" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="dropdown-item text-danger">
-                                        <i class="fas fa-sign-out-alt me-2"></i>Sair
-                                    </button>
-                                </form>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+    <nav class="navbar navbar-dark bg-dark px-3">
+        <a class="navbar-brand" href="#">AME - Linha de Cuidado</a>
+        <div class="text-white">
+            Olá, {{ user.get_full_name|default:user.username }} |
+            <a href="{% url 'logout' %}" class="text-white fw-bold ms-2" style="text-decoration: underline;">Sair</a>
         </div>
     </nav>
-    {% endif %}
 
-    <div class="container">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
+    <div class="wrapper">
+        <nav class="sidebar">
+            <ul class="list-unstyled mt-3">
 
-        {% block content %}{% endblock %}
+                <li>
+                    <a href="{% url 'index' %}">
+                        <i class="fas fa-home me-2"></i> Início
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'gestao_pacientes' %}">
+                        <i class="fas fa-users me-2"></i> Pacientes
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'atendimento_hub' %}">
+                        <i class="fas fa-user-nurse me-2"></i> Atendimento
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'monitoramento_busca' %}">
+                        <i class="fas fa-desktop me-2"></i> Monitoramento
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'gestao_usuarios' %}">
+                        <i class="fas fa-user-md me-2"></i> Equipe / Usuários
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+
+        <main class="content">
+            {% block content %}
+            {% endblock %}
+        </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
