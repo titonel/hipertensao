@@ -32,4 +32,6 @@ urlpatterns = [
     path('paciente/alta/<int:id>/', views.gerar_alta, name='gerar_alta'),
     path('monitoramento/', views.monitoramento_busca, name='monitoramento_busca'),
     path('monitoramento/painel/<int:paciente_id>/', views.monitoramento_painel, name='monitoramento_painel'),
+    path('prontuario/medico/<int:paciente_id>/', views.realizar_atendimento_medico, name='atendimento_medico'),
+    path('prontuario/prescricao/<int:atendimento_id>/', views.prescricao_medica_view, name='prescricao_medica'),
 ]

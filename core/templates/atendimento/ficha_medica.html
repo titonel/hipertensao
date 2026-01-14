@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Cores personalizadas para o Risco */
+    .bg-orange { background-color: #fd7e14; color: white; }
+
+    /* Estilos do SOAP */
+    .soap-label {
+        font-weight: bold;
+        color: #0d6efd; /* Azul Bootstrap padrão, ajuste para sua marca */
+        margin-top: 10px;
+    }
+
+    .header-paciente {
+        background-color: #f8f9fa;
+        border-left: 5px solid #0d6efd;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .card-prevent {
+        transition: transform 0.2s;
+    }
+    .card-prevent:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+<div class="container mt-4">
+
+    <div class="header-paciente shadow-sm rounded">
+        <div class="row align-items-center">
+            <div class="col-md-5">
+                <h4 class="mb-0">{{ paciente.nome }}</h4>
+                <small class="text-muted">
+                    <i class="fas fa-id-card"></i> CPF: {{ paciente.cpf }} |
+                    <i class="fas fa-birthday-cake"></i> {{ paciente.idade }} anos
+                </small>
+                <div class="mt-1">
+                    <span class="badge bg-secondary">{{ paciente.municipio }}</span>
+                    <span class="badge bg-light text-dark border">CROSS: {{ paciente.numero_cross|default:"N/A" }}</span>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                 </div>
+
+            <div class="col-md-4 text-center">
+                <div class="card card-prevent {{ risco_css }}">
+                    <div class="card-body p-2">
+                        <small class="text-uppercase" style="font-size: 0.7rem; opacity: 0.9;">Calculadora Prevent (10 Anos)</small>
+                        <h2 class="m-0 fw-bold">{{ prevent_score }}%</h2>
+                        <span class="badge bg-white text-dark mt-1">{{ risco_texto }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                Corrija os erros abaixo: {{ form.errors }}
+            </div>
+        {% endif %}
+
+        <div class="card shadow">
+            <div class="card-header bg-white py-3">
+                <h5 class="m-0"><i class="fas fa-user-md me-2"></i>Registro Clínico (SOAP)</h5>
+            </div>
+            <div class="card-body">
+
+                <div class="mb-3">
+                    <label class="soap-label">S - Subjetivo (Queixas e História)</label>
+                    {{ form.subjetivo }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="soap-label">O - Objetivo (Exame Físico e Sinais Vitais)</label>
+                    {{ form.objetivo }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="soap-label">A - Avaliação (Hipóteses Diagnósticas)</label>
+                    {{ form.avaliacao }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="soap-label">P - Plano (Conduta)</label>
+                    {{ form.plano }}
+                </div>
+
+                <hr class="my-4">
+
+                <h6 class="mb-3 fw-bold text-secondary">Hipóteses Diagnósticas (CID-10)</h6>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">CID-10 Principal *</label>
+                        {{ form.cid10_1 }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">CID-10 Secundário</label>
+                        {{ form.cid10_2 }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">CID-10 Terciário</label>
+                        {{ form.cid10_3 }}
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Sugestão CID-11 (Automático)</label>
+                        <input type="text" id="cid11_preview" class="form-control bg-light" readonly placeholder="Aguardando CID-10...">
+                    </div>
+                </div>
+
+            </div>
+            <div class="card-footer bg-light text-end p-3">
+                <a href="javascript:history.back()" class="btn btn-secondary me-2">Cancelar</a>
+                <button type="submit" class="btn btn-primary btn-lg px-4">
+                    <i class="fas fa-save me-2"></i> Salvar e Prescrever
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputCid1 = document.getElementById('id_cid10_1');
+        const previewCid11 = document.getElementById('cid11_preview');
+
+        // Mapeamento simples local para feedback instantâneo (O real acontece no Python)
+        const mapaRapido = {
+            'I10': 'BA00 (Hipertensão Essencial)',
+            'I11': 'BA01 (Doença Cardíaca Hipertensiva)',
+            'E11': '5A11 (Diabetes Tipo 2)',
+            'I50': 'BD10 (Insuficiência Cardíaca)',
+            'I20': 'BA40 (Angina Pectoris)',
+            'Z00': 'QA00 (Exame Geral)'
+        };
+
+        inputCid1.addEventListener('input', function() {
+            const val = this.value.toUpperCase().trim();
+            if (mapaRapido[val]) {
+                previewCid11.value = mapaRapido[val];
+                previewCid11.classList.add('text-success', 'fw-bold');
+            } else if (val.length >= 3) {
+                previewCid11.value = "Calculando no servidor...";
+                previewCid11.classList.remove('text-success', 'fw-bold');
+            } else {
+                previewCid11.value = "";
+            }
+        });
+    });
+</script>
+
+{% endblock %}
