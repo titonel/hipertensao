@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 from datetime import date
-
+from .services_cid import converter_cid10_para_cid11
 
 class Usuario(AbstractUser):
     # --- 1. CAMPOS DE CONTROLE (RESTAURADOS) ---
@@ -229,3 +230,85 @@ class AvaliacaoPrevent(models.Model):
 
     def __str__(self):
         return f"Multi - {self.paciente.nome} - {self.data_atendimento}"
+
+
+class TriagemHipertensao(models.Model):
+    paciente = models.ForeignKey('Paciente', on_delete=models.CASCADE, related_name='triagens_has')
+
+    # CORREÇÃO AQUI: Trocado 'Profissional' por 'Usuario'
+    profissional = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True)
+
+    data_triagem = models.DateTimeField(default=timezone.now)
+
+    # Entradas de Dados (Inputs)
+    pa_sistolica_1 = models.IntegerField(verbose_name="PAS 1")
+    pa_diastolica_1 = models.IntegerField(verbose_name="PAD 1")
+    pa_sistolica_2 = models.IntegerField(verbose_name="PAS 2")
+    pa_diastolica_2 = models.IntegerField(verbose_name="PAD 2")
+    pa_sistolica_3 = models.IntegerField(verbose_name="PAS 3")
+    pa_diastolica_3 = models.IntegerField(verbose_name="PAD 3")
+
+    # Médias Calculadas
+    media_sistolica = models.DecimalField(max_digits=5, decimal_places=1, blank=True)
+    media_diastolica = models.DecimalField(max_digits=5, decimal_places=1, blank=True)
+
+    qtd_antihipertensivos = models.IntegerField(default=0)
+    risco_loa_presente = models.BooleanField(default=False)
+
+    ESTADOS_DESFECHO = [
+        ('ELEGIVEL', 'Elegível'),
+        ('CONTRARREFERENCIA', 'Não Elegível')
+    ]
+    status_elegibilidade = models.CharField(max_length=20, choices=ESTADOS_DESFECHO)
+    motivo_desfecho = models.TextField(blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.media_sistolica = (self.pa_sistolica_1 + self.pa_sistolica_2 + self.pa_sistolica_3) / 3
+        self.media_diastolica = (self.pa_diastolica_1 + self.pa_diastolica_2 + self.pa_diastolica_3) / 3
+        super().save(*args, **kwargs)
+
+
+# --- MODELO 2: ATENDIMENTO MÉDICO ---
+class AtendimentoMedico(models.Model):
+    paciente = models.ForeignKey('Paciente', on_delete=models.CASCADE)
+
+    # CORREÇÃO AQUI: Trocado 'Profissional' por 'Usuario'
+    medico = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True)
+
+    data_atendimento = models.DateTimeField(default=timezone.now)
+    score_prevent_valor = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Score Prevent (%)")
+
+    # SOAP
+    subjetivo = models.TextField(verbose_name="S - Subjetivo")
+    objetivo = models.TextField(verbose_name="O - Objetivo")
+    avaliacao = models.TextField(verbose_name="A - Avaliação")
+    plano = models.TextField(verbose_name="P - Plano")
+
+    # Diagnósticos
+    cid10_1 = models.CharField(max_length=10, verbose_name="CID-10 Principal")
+    cid10_2 = models.CharField(max_length=10, blank=True, null=True)
+    cid10_3 = models.CharField(max_length=10, blank=True, null=True)
+    cid11_correspondente = models.CharField(max_length=200, blank=True)
+
+    def save(self, *args, **kwargs):
+        # Importação local para evitar Ciclo de Importação
+        from .services_cid import converter_cid10_para_cid11
+        if self.cid10_1:
+            self.cid11_correspondente = converter_cid10_para_cid11(self.cid10_1)
+        super().save(*args, **kwargs)
+
+# --- MODELO 3: PRESCRIÇÃO ---
+class PrescricaoMedica(models.Model):
+    atendimento = models.OneToOneField(AtendimentoMedico, on_delete=models.CASCADE, related_name='prescricao')
+    data_prescricao = models.DateTimeField(auto_now_add=True)
+    observacoes_gerais = models.TextField(blank=True)
+
+
+class ItemPrescricao(models.Model):
+    TIPO_USO = [('CONTINUO', 'Uso Contínuo'), ('TEMPORARIO', 'Uso Temporário'), ('CONTROLADO', 'Controle Especial')]
+    prescricao = models.ForeignKey(PrescricaoMedica, on_delete=models.CASCADE, related_name='itens')
+    medicamento_nome = models.CharField(max_length=200)
+    concentracao = models.CharField(max_length=100)
+    posologia = models.TextField()
+    quantidade = models.CharField(max_length=50)
+    tipo = models.CharField(max_length=20, choices=TIPO_USO, default='CONTINUO')

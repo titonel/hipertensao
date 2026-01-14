@@ -1,5 +1,5 @@
 import os
-import base64  # <--- ADICIONE ESTA LINHA AQUI
+import base64
 import requests
 import json
 from django.shortcuts import render, redirect, get_object_or_404
@@ -14,8 +14,8 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 from django.conf import settings
 from datetime import datetime, date, timedelta
-from .models import Paciente, Medicamento, Afericao, Usuario, AtendimentoMultidisciplinar, AvaliacaoPrevent
-from .forms import PacienteForm, UsuarioForm
+from .models import Paciente, Medicamento, Afericao, Usuario, AtendimentoMultidisciplinar, AvaliacaoPrevent, AtendimentoMedico, TriagemHipertensao
+from .forms import PacienteForm, UsuarioForm, AtendimentoMedicoForm, TriagemHASForm, AtendimentoMedicoForm
 
 # Função auxiliar para idade
 def calcular_idade(nascimento):
@@ -43,7 +43,41 @@ def get_base64_image(filename):
         print(f"ERRO B64 ao ler arquivo: {e}")
         return None
 
-# --- Autenticação ---
+
+def prescricao_medica_view(request, atendimento_id):
+    atendimento = get_object_or_404(AtendimentoMedico, id=atendimento_id)
+
+    # Tenta pegar a prescrição existente ou cria uma nova vazia
+    prescricao, created = PrescricaoMedica.objects.get_or_create(atendimento=atendimento)
+
+    # Fábrica de Formsets: Permite editar os Itens vinculados à Prescrição
+    ItemPrescricaoFormSet = inlineformset_factory(
+        PrescricaoMedica,
+        ItemPrescricao,
+        fields=('medicamento_nome', 'concentracao', 'posologia', 'quantidade', 'tipo'),
+        extra=1,  # Mostra 1 linha vazia para adicionar
+        can_delete=True
+    )
+
+    if request.method == 'POST':
+        formset = ItemPrescricaoFormSet(request.POST, instance=prescricao)
+        if formset.is_valid():
+            formset.save()
+            # Redireciona para gerar o PDF ou volta para lista
+            return redirect('detalhe_paciente', paciente_id=atendimento.paciente.id)
+    else:
+        formset = ItemPrescricaoFormSet(instance=prescricao)
+
+    # Separação visual para o Template (Opcional, se quiser renderizar em tabelas separadas)
+    # No template você pode iterar e verificar: {% if form.instance.tipo == 'CONTROLADO' %}
+
+    context = {
+        'atendimento': atendimento,
+        'paciente': atendimento.paciente,
+        'formset': formset,
+    }
+
+    return render(request, 'atendimento/prescricao_form.html', context)
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -97,6 +131,52 @@ def link_callback(uri, rel):
     else:
         print(f"DEBUG PDF: Arquivo não encontrado no disco: {path}")
         return uri
+
+
+def realizar_atendimento_medico(request, paciente_id):
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+
+    # Busca o último score prevent calculado (ex: na triagem ou pré-consulta)
+    # Supondo que você tenha salvo isso em algum lugar, ou calculamos na hora
+    ultimo_score = 12.5  # VALOR EXEMPLO (Risco Intermediário) - Substituir por busca no banco
+
+    if request.method == 'POST':
+        form = AtendimentoMedicoForm(request.POST)
+        if form.is_valid():
+            atendimento = form.save(commit=False)
+            atendimento.paciente = paciente
+            atendimento.medico = request.user  # Usuário logado
+            atendimento.score_prevent_valor = ultimo_score
+            atendimento.save()  # O save() já chama a conversão de CID
+
+            # REDIRECIONAMENTO PARA PRESCRIÇÃO
+            return redirect('prescricao_medica', atendimento_id=atendimento.id)
+    else:
+        form = AtendimentoMedicoForm()
+
+    # Prepara dados visuais do risco
+    # Logica visual replicada aqui para o template (ou usar método do model se tiver instância)
+    classe_risco = ""
+    texto_risco = ""
+    if ultimo_score < 5:
+        classe_risco, texto_risco = "bg-success text-white", "Baixo Risco"
+    elif ultimo_score < 7.5:
+        classe_risco, texto_risco = "bg-warning text-dark", "Risco Limítrofe"
+    elif ultimo_score < 20:
+        classe_risco, texto_risco = "orange-bg text-white", "Risco Intermediário"  # Definir CSS orange-bg
+    else:
+        classe_risco, texto_risco = "bg-danger text-white", "Alto Risco"
+
+    context = {
+        'paciente': paciente,
+        'form': form,
+        'prevent_score': ultimo_score,
+        'risco_css': classe_risco,
+        'risco_texto': texto_risco,
+        'cids_comuns': ['I10', 'E11', 'I50', 'I20']  # Para autocomplete no front
+    }
+
+    return render(request, 'atendimento/ficha_medica.html', context)
 
 @login_required
 def logout_view(request):
@@ -909,3 +989,64 @@ def monitoramento_painel(request, paciente_id):
         'erro_api': erro_api
     }
     return render(request, 'monitoramento_painel.html', context)
+
+
+def prescricao_medica(request, atendimento_id):
+    atendimento = get_object_or_404(AtendimentoMedico, id=atendimento_id)
+    medicamentos_db = Medicamento.objects.all()  # Otimizar com .values() para JSON no front
+
+    if request.method == 'POST':
+        # Cria a prescrição vinculada ao atendimento
+        prescricao = Prescricao.objects.create(
+            atendimento=atendimento,
+            observacoes_gerais=request.POST.get('observacoes_gerais')
+        )
+
+        # O front-end enviará os itens como um JSON stringificado
+        itens_json = request.POST.get('itens_prescricao_json')
+        if itens_json:
+            lista_itens = json.loads(itens_json)
+            for item in lista_itens:
+                med_obj = Medicamento.objects.get(id=item['id_medicamento'])
+                ItemPrescricao.objects.create(
+                    prescricao=prescricao,
+                    medicamento=med_obj,
+                    posologia=item['posologia'],
+                    quantidade=item['quantidade'],
+                    uso_continuo=item.get('uso_continuo', False)
+                )
+
+        return redirect('visualizar_impressao_receita', prescricao_id=prescricao.id)
+
+    context = {
+        'atendimento': atendimento,
+        'paciente': atendimento.paciente,
+        'medicamentos': medicamentos_db
+    }
+    return render(request, 'atendimento/prescricao_form.html', context)
+
+
+def visualizar_impressao_receita(request, prescricao_id):
+    """
+    Separa os itens em listas distintas para gerar PDFs separados se necessário.
+    """
+    prescricao = get_object_or_404(Prescricao, id=prescricao_id)
+    itens = prescricao.itens.all()
+
+    receita_simples = []
+    receita_controle = []
+
+    for item in itens:
+        if item.medicamento.tipo_receita == 'SIMPLES':
+            receita_simples.append(item)
+        else:
+            receita_controle.append(item)
+
+    context = {
+        'prescricao': prescricao,
+        'paciente': prescricao.atendimento.paciente,
+        'receita_simples': receita_simples,
+        'receita_controle': receita_controle,
+        'hoje': timezone.now()
+    }
+    return render(request, 'atendimento/impressao_receita.html', context)

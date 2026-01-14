@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .orange-bg { background-color: #fd7e14; } /* Cor personalizada para risco intermediário */
+    .soap-label { font-weight: bold; color: #1dccb2; /* Cor da sua marca */ }
+    .header-paciente { background-color: #f8f9fa; border-left: 5px solid #1dccb2; padding: 15px; margin-bottom: 20px; }
+</style>
+
+<div class="container mt-4">
+    
+    <div class="header-paciente shadow-sm rounded">
+        <div class="row">
+            <div class="col-md-4">
+                <h4>{{ paciente.nome }}</h4>
+                <small class="text-muted">CPF: {{ paciente.cpf }}</small>
+            </div>
+            <div class="col-md-3">
+                <p><strong>Idade:</strong> {{ paciente.idade }} anos</p>
+                <p><strong>Município:</strong> {{ paciente.municipio }}</p>
+            </div>
+            <div class="col-md-3">
+                <p><strong>SIRESP/CROSS:</strong> {{ paciente.numero_cross }}</p>
+            </div>
+            
+            <div class="col-md-2 text-center">
+                <div class="card {{ risco_css }}">
+                    <div class="card-body p-2">
+                        <h6 class="card-title m-0">Score Prevent</h6>
+                        <h3 class="m-0">{{ prevent_score }}%</h3>
+                        <small>{{ risco_texto }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="card shadow">
+            <div class="card-header bg-white">
+                <h5 class="m-0">Registro Clínico (SOAP)</h5>
+            </div>
+            <div class="card-body">
+                
+                <div class="mb-3">
+                    <label class="soap-label">S - Subjetivo (Queixas e História)</label>
+                    {{ form.subjetivo }} </div>
+
+                <div class="mb-3">
+                    <label class="soap-label">O - Objetivo (Exame Físico e Sinais Vitais)</label>
+                    {{ form.objetivo }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="soap-label">A - Avaliação (Hipóteses Diagnósticas)</label>
+                    {{ form.avaliacao }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="soap-label">P - Plano (Conduta)</label>
+                    {{ form.plano }}
+                </div>
+
+                <hr>
+
+                <h6 class="mb-3">Hipóteses Diagnósticas (CID-10)</h6>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label>CID-10 Principal *</label>
+                        {{ form.cid10_1 }}
+                    </div>
+                    <div class="col-md-3">
+                        <label>CID-10 (2)</label>
+                        {{ form.cid10_2 }}
+                    </div>
+                    <div class="col-md-3">
+                        <label>CID-10 (3)</label>
+                        {{ form.cid10_3 }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="text-muted">CID-11 Sugerido</label>
+                        <input type="text" id="cid11_preview" class="form-control" readonly placeholder="Calculado ao salvar...">
+                        <small class="text-muted">Conversão automática baseada no CID Principal</small>
+                    </div>
+                </div>
+
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-prescription-bottle-alt"></i> Salvar e Ir para Prescrição
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('id_cid10_1').addEventListener('blur', function() {
+        const cid10 = this.value.toUpperCase();
+        const map = {
+            'I10': 'BA00', 'I11': 'BA01', 'E11': '5A11', 'I50': 'BD10'
+        };
+        const cid11 = map[cid10] || "Processando...";
+        document.getElementById('cid11_preview').value = cid11;
+    });
+</script>
+
+{% endblock %}

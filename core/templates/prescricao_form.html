@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Prescrição Médica</h3>
+        <span class="badge bg-info text-dark">{{ paciente.nome }}</span>
+    </div>
+
+    <div class="alert alert-light border">
+        <strong>Diagnósticos definidos:</strong>
+        {{ atendimento.cid10_1 }} {% if atendimento.cid10_2 %}, {{ atendimento.cid10_2 }}{% endif %}
+        <br>
+        <small class="text-muted">Conversão CID-11: {{ atendimento.cid11_correspondente }}</small>
+    </div>
+
+    <form method="post" id="prescricaoForm">
+        {% csrf_token %}
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-pills"></i> Receita Comum / Uso Contínuo
+            </div>
+            <div class="card-body">
+                {{ formset_comum.management_form }}
+                <div id="lista-comum">
+                    {% for form in formset_comum %}
+                    <div class="row g-2 mb-3 item-receita border-bottom pb-2">
+                        <div class="col-md-3">
+                            {{ form.medicamento_nome.label_tag }}
+                            {{ form.medicamento_nome }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.concentracao.label_tag }}
+                            {{ form.concentracao }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.posologia.label_tag }}
+                            {{ form.posologia }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.quantidade.label_tag }}
+                            {{ form.quantidade }}
+                        </div>
+                        <input type="hidden" name="{{ form.prefix }}-tipo" value="CONTINUO">
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-success" id="add-comum">+ Adicionar Medicamento</button>
+            </div>
+        </div>
+
+        <div class="card mb-4 shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-file-prescription"></i> Controle Especial (Receita Branca C1 / B1)
+            </div>
+            <div class="card-body bg-light">
+                {{ formset_especial.management_form }}
+                {% for form in formset_especial %}
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            {{ form.medicamento_nome.label_tag }}
+                            {{ form.medicamento_nome }}
+                        </div>
+                        <div class="col-md-4">
+                            {{ form.posologia.label_tag }}
+                            {{ form.posologia }}
+                        </div>
+                         <div class="col-md-2">
+                            {{ form.quantidade.label_tag }}
+                            {{ form.quantidade }}
+                        </div>
+                        <input type="hidden" name="{{ form.prefix }}-tipo" value="CONTROLADO">
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="text-end">
+            <a href="#" class="btn btn-secondary">Voltar</a>
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-print"></i> Salvar e Imprimir Receita
+            </button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
