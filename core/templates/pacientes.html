@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'sidebar.html' %}
 {% load static %}
 
 {% block content %}
@@ -7,6 +7,31 @@
     <button class="btn btn-success" onclick="abrirModalNovo()">
         <i class="fas fa-plus me-2"></i>Novo Paciente
     </button>
+</div>
+
+<div class="card shadow-sm mb-4 border-0">
+    <div class="card-body bg-light rounded">
+        <form method="GET" class="row g-2 align-items-center" id="searchForm">
+            <div class="col-md-10">
+                <div class="input-group">
+                    <span class="input-group-text bg-white text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" name="busca" id="inputBusca" class="form-control border-start-0 ps-0"
+                           placeholder="Digite Nome, CPF ou CROSS para filtrar instantaneamente..."
+                           value="{{ request.GET.busca|default:'' }}" autocomplete="off" autofocus>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+            {% if request.GET.busca %}
+            <div class="col-12 mt-2">
+                <a href="{% url 'gestao_pacientes' %}" class="small text-danger text-decoration-none">
+                    <i class="fas fa-times me-1"></i>Limpar Filtros do Servidor
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
 </div>
 
 <div class="card shadow-sm">
@@ -25,10 +50,19 @@
                         <th class="text-end">Ações</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="tabelaPacientes">
                     {% for p in pacientes %}
-                    <tr>
-                        <td class="fw-bold">{{ p.nome }}</td>
+                    <tr class="paciente-row"
+                        data-filter="{{ p.nome|lower }} {{ p.cpf }} {{ p.siresp|default:'' }}">
+
+                        <td class="fw-bold">
+                            <a href="{% url 'detalhe_paciente' p.id %}" class="text-decoration-none text-dark hover-link">
+                                {{ p.nome }} <i class="fas fa-external-link-alt ms-1 text-muted small" style="font-size: 0.7em;"></i>
+                            </a>
+                            {% if p.siresp %}
+                                <div style="font-size: 0.7rem;" class="text-muted">CROSS: {{ p.siresp }}</div>
+                            {% endif %}
+                        </td>
                         <td>{{ p.cpf }}</td>
                         <td>
                             {% if p.sexo == 'M' %}
@@ -50,7 +84,7 @@
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <a href="{% url 'atendimento_hub' %}?id={{ p.id }}" class="btn btn-sm btn-outline-danger me-1" title="Registrar PA">
+                            <a href="{% url 'atendimento_hub' %}?busca_termo={{ p.cpf }}" class="btn btn-sm btn-outline-danger me-1" title="Novo Atendimento">
                                 <i class="fas fa-heartbeat"></i>
                             </a>
                             <button class="btn btn-sm btn-outline-primary" onclick="editarPaciente({{ p.id }})" title="Editar Cadastro">
@@ -59,10 +93,15 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">Nenhum paciente cadastrado.</td>
+                    <tr id="no-results">
+                        <td colspan="8" class="text-center text-muted py-4">Nenhum paciente encontrado.</td>
                     </tr>
                     {% endfor %}
+                    <tr id="nenhum-encontrado" style="display: none;">
+                        <td colspan="8" class="text-center text-muted py-4">
+                            <i class="fas fa-filter me-2"></i>Nenhum paciente corresponde à sua busca.
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -79,7 +118,8 @@
             </div>
 
             <form action="{% url 'salvar_paciente' %}" method="POST">
-                {% csrf_token %} <div class="modal-body">
+                {% csrf_token %}
+                <div class="modal-body">
                     <input type="hidden" name="paciente_id" id="paciente_id">
 
                     <div class="row mb-3">
@@ -158,6 +198,40 @@
 </div>
 
 <script>
+    // --- LÓGICA DE FILTRO DINÂMICO ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputBusca = document.getElementById('inputBusca');
+        const linhas = document.querySelectorAll('.paciente-row');
+        const msgNenhum = document.getElementById('nenhum-encontrado');
+        const msgOriginal = document.getElementById('no-results'); // Msg do backend
+
+        inputBusca.addEventListener('keyup', function() {
+            const termo = this.value.toLowerCase();
+            let visiveis = 0;
+
+            linhas.forEach(row => {
+                // Pega os dados concatenados (Nome + CPF + CROSS)
+                const texto = row.getAttribute('data-filter');
+
+                if (texto.includes(termo)) {
+                    row.style.display = '';
+                    visiveis++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // Controle da mensagem de "Nenhum encontrado"
+            if (visiveis === 0) {
+                if(msgOriginal) msgOriginal.style.display = 'none'; // Esconde msg original se houver
+                msgNenhum.style.display = '';
+            } else {
+                msgNenhum.style.display = 'none';
+            }
+        });
+    });
+
+    // --- FUNÇÕES MODAL ---
     function abrirModalNovo() {
         document.getElementById('modalTitulo').innerText = "Novo Paciente";
         document.getElementById('paciente_id').value = "";
@@ -176,7 +250,6 @@
     }
 
     function editarPaciente(id) {
-        // Ajuste da URL para o padrão Django (api/paciente/ID/)
         fetch(`/api/paciente/${id}/`)
             .then(response => response.json())
             .then(data => {
@@ -197,4 +270,11 @@
             .catch(error => console.error('Erro:', error));
     }
 </script>
+
+<style>
+    .hover-link:hover {
+        color: #004587 !important; /* Azul Seconci */
+        text-decoration: underline !important;
+    }
+</style>
 {% endblock %}

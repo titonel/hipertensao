@@ -1,9 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'sidebar.html' %}
 {% load static %}
 
 {% block content %}
 <div class="container mt-4">
-{% if messages %}
+    {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                 {{ message }}
@@ -11,12 +11,13 @@
             </div>
         {% endfor %}
     {% endif %}
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2 class="text-primary fw-bold"><i class="fas fa-user-md me-2"></i>Gestão de Equipe</h2>
             <p class="text-muted">Gerencie médicos, enfermeiros e equipe administrativa.</p>
         </div>
-        <button type="button" class="btn btn-primary btn-lg shadow-sm" data-bs-toggle="modal" data-bs-target="#modalUsuario">
+        <button type="button" class="btn btn-primary btn-lg shadow-sm" onclick="abrirModalNovo()">
             <i class="fas fa-plus me-2"></i>Novo Usuário
         </button>
     </div>
@@ -55,9 +56,6 @@
                             {% if u.drt %}
                                 <div class="small text-muted">Matr: {{ u.drt }}</div>
                             {% endif %}
-                            {% if not u.tipo_registro and not u.drt %}
-                                <span class="text-muted">-</span>
-                            {% endif %}
                         </td>
                         <td>
                             {% if u.is_active %}
@@ -67,7 +65,9 @@
                             {% endif %}
                         </td>
                         <td class="text-end pe-4">
-                            <button class="btn btn-sm btn-outline-secondary" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="editarUsuario({{ u.id }})" title="Editar">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
                         </td>
                     </tr>
                     {% empty %}
@@ -86,39 +86,39 @@
         <div class="modal-content">
             <form method="POST">
                 {% csrf_token %}
+                <input type="hidden" name="usuario_id" id="usuario_id">
 
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Cadastrar Novo Profissional</h5>
+                    <h5 class="modal-title" id="modalTitulo"><i class="fas fa-user-plus me-2"></i>Cadastrar Novo Profissional</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <div class="modal-body">
-
                     <h6 class="text-primary border-bottom pb-2 mb-3">1. Dados de Acesso e Pessoais</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label">Nome Completo</label>
-                            <div class="input-group">
-                                <input type="text" name="first_name" class="form-control" placeholder="Primeiro Nome" required>
-                                <input type="text" name="last_name" class="form-control" placeholder="Sobrenome" required>
-                            </div>
+                            <label class="form-label">Primeiro Nome</label>
+                            <input type="text" name="first_name" id="first_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Sobrenome</label>
+                            <input type="text" name="last_name" id="last_name" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control" required>
+                            <input type="email" name="email" id="email" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nome de Usuário (Login)</label>
-                            <input type="text" name="username" class="form-control" required>
+                            <input type="text" name="username" id="username" class="form-control" required>
                         </div>
                     </div>
 
-                    <h6 class="text-primary border-bottom pb-2 mb-3">2. Dados Profissionais (Obrigatório para Receituário)</h6>
+                    <h6 class="text-primary border-bottom pb-2 mb-3">2. Dados Profissionais</h6>
                     <div class="row g-3 mb-4 bg-light p-3 rounded">
-
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Tipo de Profissional</label>
-                            <select name="tipo_profissional" class="form-select">
+                            <select name="tipo_profissional" id="tipo_profissional" class="form-select">
                                 <option value="">Administrativo / Outro</option>
                                 <option value="MED">Médico</option>
                                 <option value="ENF">Enfermeiro</option>
@@ -126,15 +126,13 @@
                                 <option value="FAR">Farmacêutico</option>
                             </select>
                         </div>
-
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Matrícula / DRT</label>
-                            <input type="text" name="drt" class="form-control" placeholder="Opcional">
+                            <input type="text" name="drt" id="drt" class="form-control" placeholder="Opcional">
                         </div>
-
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Sigla do Conselho</label>
-                            <select name="tipo_registro" class="form-select">
+                            <select name="tipo_registro" id="tipo_registro" class="form-select">
                                 <option value="">---</option>
                                 <option value="CRM">CRM (Medicina)</option>
                                 <option value="COREN">COREN (Enfermagem)</option>
@@ -142,33 +140,31 @@
                                 <option value="CRF">CRF (Farmácia)</option>
                             </select>
                         </div>
-
                         <div class="col-md-8">
                             <label class="form-label fw-bold">Número do Registro</label>
-                            <input type="text" name="registro_profissional" class="form-control" placeholder="Ex: 123456/SP">
+                            <input type="text" name="registro_profissional" id="registro_profissional" class="form-control" placeholder="Ex: 123456/SP">
                         </div>
                     </div>
 
                     <h6 class="text-primary border-bottom pb-2 mb-3">3. Segurança</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">Senha Inicial</label>
-                            <input type="password" name="password" class="form-control" placeholder="Deixe em branco para senha padrão">
+                            <label class="form-label">Senha</label>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Preencha apenas para alterar">
                         </div>
                         <div class="col-md-6 d-flex align-items-center mt-4">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="mudar_senha" id="checkMudarSenha" checked>
-                                <label class="form-check-label" for="checkMudarSenha">Forçar troca de senha no 1º login</label>
+                                <input class="form-check-input" type="checkbox" name="mudar_senha" id="mudar_senha">
+                                <label class="form-check-label" for="mudar_senha">Forçar troca de senha no login</label>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="is_active" id="checkAtivo" checked>
-                                <label class="form-check-label text-success fw-bold" for="checkAtivo">Usuário Ativo</label>
+                                <input class="form-check-input" type="checkbox" name="is_active" id="is_active" checked>
+                                <label class="form-check-label text-success fw-bold" for="is_active">Usuário Ativo</label>
                             </div>
                         </div>
                     </div>
-
                 </div>
 
                 <div class="modal-footer bg-light">
@@ -179,4 +175,56 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Aguarda o carregamento completo do DOM e das bibliotecas (Bootstrap)
+    document.addEventListener('DOMContentLoaded', function() {
+        var modalElement = document.getElementById('modalUsuario');
+        var modalUsuario = new bootstrap.Modal(modalElement);
+
+        // Torna as funções globais para o onclick funcionar
+        window.abrirModalNovo = function() {
+            document.getElementById('modalTitulo').innerText = "Cadastrar Novo Profissional";
+            document.querySelector('form').reset();
+            document.getElementById('usuario_id').value = "";
+            document.getElementById('is_active').checked = true;
+            document.getElementById('mudar_senha').checked = true;
+            modalUsuario.show();
+        };
+
+        window.editarUsuario = function(id) {
+            // Busca dados na API
+            fetch(`/api/usuario/${id}/`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Erro na rede');
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('modalTitulo').innerText = "Editar Profissional";
+
+                    document.getElementById('usuario_id').value = data.id;
+                    document.getElementById('first_name').value = data.first_name || "";
+                    document.getElementById('last_name').value = data.last_name || "";
+                    document.getElementById('email').value = data.email || "";
+                    document.getElementById('username').value = data.username || "";
+
+                    document.getElementById('tipo_profissional').value = data.tipo_profissional || "";
+                    document.getElementById('drt').value = data.drt || "";
+                    document.getElementById('tipo_registro').value = data.tipo_registro || "";
+                    document.getElementById('registro_profissional').value = data.registro_profissional || "";
+
+                    document.getElementById('is_active').checked = data.is_active;
+                    document.getElementById('mudar_senha').checked = data.mudar_senha;
+
+                    document.getElementById('password').value = ""; // Senha vazia
+
+                    modalUsuario.show();
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert("Erro ao carregar dados do usuário. Tente recarregar a página.");
+                });
+        };
+    });
+</script>
 {% endblock %}

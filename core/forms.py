@@ -1,32 +1,32 @@
 from django import forms
 from .models import Paciente, Usuario, TriagemHipertensao, AtendimentoMedico
 
-
 class PacienteForm(forms.ModelForm):
     class Meta:
         model = Paciente
-        fields = '__all__' # Ou liste os campos
+        fields = '__all__'
         widgets = {
             'data_nascimento': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            # Adicione outros widgets conforme necessário
+            'data_insercao': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
 
 class UsuarioForm(forms.ModelForm):
-    class Meta:
-        model = Usuario
-        fields = '__all__'
+    # Campo opcional para definir senha ao criar/editar
+    password = forms.CharField(widget=forms.PasswordInput(), required=False, label="Senha")
 
     class Meta:
         model = Usuario
+        # Listamos apenas os campos que realmente existem no modelo atualizado
         fields = [
             'first_name',
             'last_name',
+            'username',              # Necessário para o login
             'email',
-            'mudar_senha',           # <--- RESTAURADO
-            'drt',                   # <--- MANTIDO
-            'tipo_profissional',     # <--- MANTIDO
-            'tipo_registro',         # <--- MANTIDO
-            'registro_profissional', # <--- MANTIDO
+            'mudar_senha',
+            'drt',
+            'tipo_profissional',
+            'tipo_registro',
+            'registro_profissional',
             'is_active'
         ]
 
@@ -38,7 +38,6 @@ class UsuarioForm(forms.ModelForm):
         if commit:
             user.save()
         return user
-
 
 class TriagemHASForm(forms.ModelForm):
     class Meta:
@@ -60,8 +59,6 @@ class TriagemHASForm(forms.ModelForm):
             'risco_loa_presente': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
-
-# --- NOVO: Formulário de Atendimento Médico (SOAP) ---
 class AtendimentoMedicoForm(forms.ModelForm):
     class Meta:
         model = AtendimentoMedico
@@ -70,17 +67,10 @@ class AtendimentoMedicoForm(forms.ModelForm):
             'cid10_1', 'cid10_2', 'cid10_3'
         ]
         widgets = {
-            # S.O.A.P - Textareas maiores
-            'subjetivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 4,
-                                               'placeholder': 'Queixa principal, HMA, Revisão de Sistemas...'}),
-            'objetivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 4,
-                                              'placeholder': 'Exame físico, Sinais Vitais, Resultados de Exames...'}),
-            'avaliacao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3,
-                                               'placeholder': 'Hipóteses diagnósticas e Raciocínio Clínico...'}),
-            'plano': forms.Textarea(
-                attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Conduta, Orientações, Solicitações...'}),
-
-            # CIDs
+            'subjetivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Queixa principal, HMA, Revisão de Sistemas...'}),
+            'objetivo': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Exame físico, Sinais Vitais, Resultados de Exames...'}),
+            'avaliacao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Hipóteses diagnósticas e Raciocínio Clínico...'}),
+            'plano': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Conduta, Orientações, Solicitações...'}),
             'cid10_1': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: I10 (Obrigatório)'}),
             'cid10_2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: E11'}),
             'cid10_3': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Z00'}),

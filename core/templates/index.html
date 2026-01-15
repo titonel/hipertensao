@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'sidebar.html' %}
 
 {% block content %}
 <div class="text-center mb-5">
@@ -8,53 +8,59 @@
 
 <div class="row g-4 justify-content-center">
 
+    {% if user.is_superuser %}
     <div class="col-md-3">
         <a href="{% url 'indices' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card bg-primary text-white">
                 <div class="card-body text-center py-5">
                     <i class="fas fa-chart-pie fa-4x mb-3"></i>
                     <h4 class="card-title fw-bold">Índices & Métricas</h4>
-                    <p class="card-text opacity-75">Dashboard gerencial, perfil epidemiológico e KPIs.</p>
+                    <p class="card-text opacity-75">Dashboard gerencial e KPIs.</p>
                 </div>
             </div>
         </a>
     </div>
+    {% endif %}
 
     <div class="col-md-3">
         <a href="{% url 'atendimento_hub' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card">
                 <div class="card-body text-center py-5">
                     <i class="fas fa-stethoscope fa-4x text-success mb-3"></i>
-                    <h4 class="card-title fw-bold text-dark">Atendimento</h4>
-                    <p class="card-text text-muted">Registro de sinais vitais e evolução clínica.</p>
+                    <h4 class="card-title fw-bold text-dark">Prontuário</h4>
+                    <p class="card-text text-muted">Acesso clínico ao paciente.</p>
                 </div>
             </div>
         </a>
     </div>
 
+    {% if user.is_superuser or user.tipo_profissional == 'ENF' or user.tipo_profissional == 'NUT' or user.tipo_profissional == 'FAR' %}
     <div class="col-md-3">
         <a href="{% url 'gestao_pacientes' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card">
                 <div class="card-body text-center py-5">
                     <i class="fas fa-users fa-4x text-secondary mb-3"></i>
                     <h4 class="card-title fw-bold text-dark">Pacientes</h4>
-                    <p class="card-text text-muted">Cadastro, edição e listagem geral.</p>
+                    <p class="card-text text-muted">Cadastro e edição.</p>
                 </div>
             </div>
         </a>
     </div>
+    {% endif %}
 
+    {% if user.is_superuser %}
     <div class="col-md-3">
         <a href="{% url 'gestao_medicamentos' %}" class="text-decoration-none">
             <div class="card h-100 shadow-sm border-0 hover-card">
                 <div class="card-body text-center py-5">
                     <i class="fas fa-pills fa-4x text-danger mb-3"></i>
                     <h4 class="card-title fw-bold text-dark">Farmácia</h4>
-                    <p class="card-text text-muted">Gestão da farmacopeia e classes terapêuticas.</p>
+                    <p class="card-text text-muted">Gestão da farmacopeia.</p>
                 </div>
             </div>
         </a>
     </div>
+    {% endif %}
 
 </div>
 

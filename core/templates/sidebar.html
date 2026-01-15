@@ -5,12 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AME Caraguatatuba - Hipertensão</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
     <style>
-        /* Estilos simples para o menu lateral */
         body { min-height: 100vh; display: flex; flex-direction: column; }
         .wrapper { display: flex; flex: 1; }
         .sidebar { min-width: 250px; background-color: #004587; color: white; min-height: 100vh; }
@@ -25,7 +22,8 @@
     <nav class="navbar navbar-dark bg-dark px-3">
         <a class="navbar-brand" href="#">AME - Linha de Cuidado</a>
         <div class="text-white">
-            Olá, {{ user.get_full_name|default:user.username }} |
+            Olá, {{ user.get_full_name|default:user.username }}
+            {% if user.is_superuser %}(Admin){% endif %} |
             <a href="{% url 'logout' %}" class="text-white fw-bold ms-2" style="text-decoration: underline;">Sair</a>
         </div>
     </nav>
@@ -40,11 +38,13 @@
                     </a>
                 </li>
 
+                {% if user.is_superuser or user.tipo_profissional == 'ENF' or user.tipo_profissional == 'NUT' or user.tipo_profissional == 'FAR' or user.tipo_profissional == 'MED' %}
                 <li>
                     <a href="{% url 'gestao_pacientes' %}">
                         <i class="fas fa-users me-2"></i> Gestão de Pacientes
                     </a>
                 </li>
+                {% endif %}
 
                 <li>
                     <a href="{% url 'atendimento_hub' %}">
@@ -52,21 +52,31 @@
                     </a>
                 </li>
 
+                {% if user.is_superuser or user.tipo_profissional == 'ENF' or user.tipo_profissional == 'NUT' or user.tipo_profissional == 'FAR' %}
                 <li>
                     <a href="{% url 'monitoramento_busca' %}">
                         <i class="fas fa-desktop me-2"></i> Monitoramento
                     </a>
                 </li>
+                {% endif %}
+
+                {% if user.is_superuser %}
                 <li>
                     <a href="{% url 'gestao_usuarios' %}">
                         <i class="fas fa-user-md me-2"></i> Equipe / Usuários
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'indices' %}">
-                        <i class="fas fa-paint-brush me-2"></i>Índices e Métricas
+                    <a href="{% url 'gestao_medicamentos' %}">
+                        <i class="fas fa-pills me-2"></i> Farmácia / Medicamentos
                     </a>
                 </li>
+                <li>
+                    <a href="{% url 'indices' %}">
+                        <i class="fas fa-chart-line me-2"></i> Índices e Métricas
+                    </a>
+                </li>
+                {% endif %}
 
             </ul>
         </nav>

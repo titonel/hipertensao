@@ -1,0 +1,201 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-primary fw-bold">{{ paciente.nome }}</h2>
+            <div class="text-muted">
+                <i class="fas fa-id-card me-1"></i> CPF: {{ paciente.cpf }} |
+                <i class="fas fa-birthday-cake me-1"></i> {{ paciente.idade }} anos |
+                <i class="fas fa-map-marker-alt me-1"></i> {{ paciente.municipio }}
+            </div>
+        </div>
+        <div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-success dropdown-toggle shadow-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-stethoscope me-2"></i>Novo Atendimento
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item py-2" href="{% url 'atendimento_medico' paciente.id %}">
+                            <i class="fas fa-user-md text-primary me-2"></i>Atendimento Médico
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{% url 'atendimento_multidisciplinar' paciente.id %}">
+                            <i class="fas fa-users text-success me-2"></i>Atendimento Multidisciplinar
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item py-2 text-muted" href="#" onclick="alert('Módulo Nutricional em desenvolvimento')">
+                            <i class="fas fa-apple-alt text-warning me-2"></i>Atendimento Nutricional
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{% url 'atendimento_prevent' paciente.id %}">
+                            <i class="fas fa-heartbeat text-danger me-2"></i>Calculadora AHA Prevent
+                        </a>
+                    </li>
+
+
+                </ul>
+            </div>
+
+            <a href="{% url 'gestao_pacientes' %}" class="btn btn-outline-secondary ms-2">
+                <i class="fas fa-arrow-left me-2"></i>Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">
+            <i class="fas fa-chart-line me-2 text-primary"></i>Evolução da Pressão Arterial
+        </div>
+        <div class="card-body">
+            <canvas id="chartPA" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+
+    <div class="row">
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-history me-2"></i>Histórico de Consultas
+                </div>
+                <div class="list-group list-group-flush overflow-auto" style="max-height: 600px;">
+                    {% for consulta in historico_consultas %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 fw-bold
+                                {% if consulta.tipo_visual == 'MÉDICO' %}text-primary{% else %}text-success{% endif %}">
+                                {{ consulta.tipo_visual }}
+                            </h6>
+                            <small class="text-muted">{{ consulta.data_ref|date:"d/m/Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1 small">Profissional: {{ consulta.profissional_nome }}</p>
+
+                        <div class="mt-2 p-2 bg-light rounded small border">
+                            {% if consulta.tipo_visual == 'MÉDICO' %}
+                                <strong>Diagnósticos:</strong> {{ consulta.cid10_1 }}
+                                {% if consulta.cid10_2 %}, {{ consulta.cid10_2 }}{% endif %}
+                                <br>
+                                <strong>Conduta:</strong> {{ consulta.plano|truncatechars:100 }}
+                            {% else %}
+                                <strong>Antropometria:</strong> Peso: {{ consulta.peso }}kg | IMC: {{ consulta.imc }}<br>
+                                <strong>Risco LOA:</strong> {% if consulta.tem_lesao_orgao %}Sim{% else %}Não{% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item text-center text-muted py-4">Nenhum registro encontrado.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-pills me-2"></i>Evolução Terapêutica (Prescrições)
+                </div>
+                <div class="card-body p-0 overflow-auto" style="max-height: 600px;">
+                    {% for prescricao in prescricoes %}
+                    <div class="border-bottom p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-secondary">{{ prescricao.data_prescricao|date:"d/m/Y" }}</span>
+                            <small class="text-muted">Dr(a). {{ prescricao.atendimento.medico.get_full_name }}</small>
+                        </div>
+
+                        <ul class="list-group list-group-flush small">
+                            {% for item in prescricao.itens.all %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-1 border-0">
+                                <span>
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>{{ item.medicamento_nome }}</strong> {{ item.concentracao }}
+                                </span>
+                                <span class="text-muted fst-italic">{{ item.posologia|truncatechars:30 }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-5">Nenhuma prescrição registrada.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('chartPA').getContext('2d');
+
+        const labels = {{ grafico_labels|safe }};
+        const dataPAS = {{ grafico_pas|safe }};
+        const dataPAD = {{ grafico_pad|safe }};
+        const dataPAM = {{ grafico_pam|safe }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Sistólica (PAS)',
+                        data: dataPAS,
+                        borderColor: '#dc3545', // Vermelho
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: false
+                    },
+                    {
+                        label: 'Média (PAM)',
+                        data: dataPAM,
+                        borderColor: '#fd7e14', // Laranja
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        tension: 0.3,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Diastólica (PAD)',
+                        data: dataPAD,
+                        borderColor: '#0d6efd', // Azul
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: '-1' // Preenche até a sistólica
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        title: { display: true, text: 'mmHg' }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

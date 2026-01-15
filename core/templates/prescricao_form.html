@@ -1,88 +1,236 @@
-{% extends 'base.html' %}
+{% extends 'sidebar.html' %}
+{% load static %}
 
 {% block content %}
+<style>
+    /* Estilo para a barra de botões (Padronizado) */
+    .btn-toolbar-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+</style>
+
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>Prescrição Médica</h3>
-        <span class="badge bg-info text-dark">{{ paciente.nome }}</span>
+        <div>
+            <h3 class="text-primary fw-bold">Prescrição Médica</h3>
+            <span class="badge bg-secondary">Paciente: {{ paciente.nome }}</span>
+        </div>
+        <div class="text-end">
+            <small class="text-muted d-block">Data: {% now "d/m/Y" %}</small>
+            <small class="text-muted">Médico: {{ user.get_full_name }}</small>
+        </div>
     </div>
 
-    <div class="alert alert-light border">
-        <strong>Diagnósticos definidos:</strong>
-        {{ atendimento.cid10_1 }} {% if atendimento.cid10_2 %}, {{ atendimento.cid10_2 }}{% endif %}
-        <br>
-        <small class="text-muted">Conversão CID-11: {{ atendimento.cid11_correspondente }}</small>
+    <div class="card shadow-sm border-primary mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Adicionar Medicamento</h5>
+        </div>
+        <div class="card-body bg-light">
+            <form method="POST" id="form_add_item">
+                {% csrf_token %}
+                <input type="hidden" name="adicionar_item" value="1">
+                <input type="hidden" name="medicamento_id" id="medicamento_id_input" required>
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold">Medicamento (DCB ou Comercial)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" id="busca_med" class="form-control" placeholder="Digite Lasix, Losartana, etc..." autocomplete="off">
+                        </div>
+                        <div id="sugestoes_box" class="list-group position-absolute shadow w-100" style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto;"></div>
+                        <small class="text-muted" id="info_selecionado">Nenhum medicamento selecionado.</small>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Dose Padrão</label>
+                        <input type="text" id="dose_display" class="form-control bg-white" readonly tabindex="-1">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Posologia</label>
+                        <input type="text" name="posologia" class="form-control" list="lista_posologias" placeholder="Ex: Tomar 1 cp..." required>
+                        <datalist id="lista_posologias">
+                            <option value="Tomar 1 comprimido via oral 1x ao dia (pela manhã)">
+                            <option value="Tomar 1 comprimido via oral de 12 em 12 horas">
+                            <option value="Tomar 1 comprimido via oral de 8 em 8 horas">
+                            <option value="Tomar 1 comprimido via oral à noite">
+                            <option value="Uso Contínuo">
+                        </datalist>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Qtd</label>
+                        <input type="text" name="quantidade" class="form-control" placeholder="Ex: 30 cp" required>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo de Receita</label>
+                        <select name="tipo_uso" class="form-select">
+                            <option value="CONTINUO" selected>Receita Comum</option>
+                            <option value="CONTROLADO">Receita Especial</option>
+                        </select>
+                    </div>
+                    <div class="col-md-9 text-end">
+                        <button type="submit" class="btn btn-success px-4 fw-bold" id="btn_add" disabled>
+                            <i class="fas fa-check me-2"></i>Inserir
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <form method="post" id="prescricaoForm">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">Itens da Receita</h5>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Medicamento</th>
+                        <th>Posologia</th>
+                        <th>Qtd</th>
+                        <th>Tipo</th>
+                        <th class="text-end pe-4">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in itens %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">{{ item.medicamento_nome }} {{ item.concentracao }}</td>
+                        <td>{{ item.posologia }}</td>
+                        <td>{{ item.quantidade }}</td>
+                        <td>
+                            {% if item.tipo == 'CONTINUO' %}<span class="badge bg-success">Comum</span>
+                            {% elif item.tipo == 'CONTROLADO' %}<span class="badge bg-danger">Especial</span>
+                            {% else %}<span class="badge bg-secondary">Outro</span>{% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="remover_item" value="1">
+                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">Nenhum item na prescrição.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <form method="POST" id="formNavegacao" action="{% url 'prescricao_medica' atendimento.id %}">
         {% csrf_token %}
 
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-success text-white">
-                <i class="fas fa-pills"></i> Receita Comum / Uso Contínuo
-            </div>
+        <div class="card shadow border-0">
             <div class="card-body">
-                {{ formset_comum.management_form }}
-                <div id="lista-comum">
-                    {% for form in formset_comum %}
-                    <div class="row g-2 mb-3 item-receita border-bottom pb-2">
-                        <div class="col-md-3">
-                            {{ form.medicamento_nome.label_tag }}
-                            {{ form.medicamento_nome }}
-                        </div>
-                        <div class="col-md-2">
-                            {{ form.concentracao.label_tag }}
-                            {{ form.concentracao }}
-                        </div>
-                        <div class="col-md-4">
-                            {{ form.posologia.label_tag }}
-                            {{ form.posologia }}
-                        </div>
-                        <div class="col-md-2">
-                            {{ form.quantidade.label_tag }}
-                            {{ form.quantidade }}
-                        </div>
-                        <input type="hidden" name="{{ form.prefix }}-tipo" value="CONTINUO">
+                <label class="form-label fw-bold">Observações Gerais / Orientações</label>
+                <textarea name="observacoes" id="obsArea" class="form-control" rows="3">{{ prescricao.observacoes_gerais }}</textarea>
+            </div>
+
+            <div class="card-footer bg-light p-3">
+                <div class="btn-toolbar-custom">
+
+                    <button type="button" class="btn btn-outline-secondary" onclick="limparObservacoes()">
+                        <i class="fas fa-eraser me-2"></i>Limpar Obs.
+                    </button>
+
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <button type="submit" name="action" value="salvar" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Salvar
+                        </button>
+
+                        <button type="submit" name="action" value="imprimir" class="btn btn-dark" onclick="imprimirEFechar()">
+                            <i class="fas fa-print me-2"></i>Imprimir Receita
+                        </button>
+
+                        <button type="submit" name="action" value="exames" class="btn btn-info text-white">
+                            <i class="fas fa-file-medical me-2"></i>Solicitar Exames
+                        </button>
+
+                        <button type="submit" name="action" value="alta" class="btn btn-danger">
+                            <i class="fas fa-door-open me-2"></i>Dar Alta
+                        </button>
+
+                        <button type="submit" name="action" value="voltar" class="btn btn-outline-dark">
+                            <i class="fas fa-arrow-left me-2"></i>Voltar
+                        </button>
                     </div>
-                    {% endfor %}
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-success" id="add-comum">+ Adicionar Medicamento</button>
             </div>
-        </div>
-
-        <div class="card mb-4 shadow-sm border-danger">
-            <div class="card-header bg-danger text-white">
-                <i class="fas fa-file-prescription"></i> Controle Especial (Receita Branca C1 / B1)
-            </div>
-            <div class="card-body bg-light">
-                {{ formset_especial.management_form }}
-                {% for form in formset_especial %}
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-4">
-                            {{ form.medicamento_nome.label_tag }}
-                            {{ form.medicamento_nome }}
-                        </div>
-                        <div class="col-md-4">
-                            {{ form.posologia.label_tag }}
-                            {{ form.posologia }}
-                        </div>
-                         <div class="col-md-2">
-                            {{ form.quantidade.label_tag }}
-                            {{ form.quantidade }}
-                        </div>
-                        <input type="hidden" name="{{ form.prefix }}-tipo" value="CONTROLADO">
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="text-end">
-            <a href="#" class="btn btn-secondary">Voltar</a>
-            <button type="submit" class="btn btn-primary btn-lg">
-                <i class="fas fa-print"></i> Salvar e Imprimir Receita
-            </button>
         </div>
     </form>
 </div>
 
+<script>
+    // --- Autocomplete (Mantido igual ao anterior) ---
+    const bancoMedicamentos = {{ db_medicamentos|safe }};
+    const inputBusca = document.getElementById('busca_med');
+    const boxSugestoes = document.getElementById('sugestoes_box');
+    const inputHiddenId = document.getElementById('medicamento_id_input');
+    const displayInfo = document.getElementById('info_selecionado');
+    const displayDose = document.getElementById('dose_display');
+    const btnAdd = document.getElementById('btn_add');
+
+    inputBusca.addEventListener('input', function() {
+        const termo = this.value.toLowerCase();
+        boxSugestoes.innerHTML = '';
+        if (termo.length < 2) { boxSugestoes.style.display = 'none'; return; }
+        const filtrados = bancoMedicamentos.filter(m => m.label.toLowerCase().includes(termo));
+        if (filtrados.length > 0) {
+            boxSugestoes.style.display = 'block';
+            filtrados.slice(0, 10).forEach(med => {
+                const item = document.createElement('a');
+                item.className = 'list-group-item list-group-item-action';
+                item.style.cursor = 'pointer';
+                if (med.tipo === 'COMERCIAL') item.innerHTML = `<i class="fas fa-exchange-alt text-warning me-2"></i>${med.label}`;
+                else item.innerHTML = `<i class="fas fa-capsules text-success me-2"></i>${med.label}`;
+                item.onclick = function() { selecionarMedicamento(med); };
+                boxSugestoes.appendChild(item);
+            });
+        } else { boxSugestoes.style.display = 'none'; }
+    });
+
+    function selecionarMedicamento(med) {
+        inputBusca.value = med.label;
+        inputHiddenId.value = med.id;
+        displayDose.value = med.dose;
+        if (med.tipo === 'COMERCIAL') displayInfo.innerHTML = `<span class="text-success fw-bold">Convertido: ID ${med.id}</span>`;
+        else displayInfo.innerHTML = `<span class="text-success fw-bold">DCB Selecionado.</span>`;
+        boxSugestoes.style.display = 'none';
+        btnAdd.disabled = false;
+    }
+
+    document.addEventListener('click', function(e) { if (e.target !== inputBusca) boxSugestoes.style.display = 'none'; });
+
+    // --- Funções da Barra de Navegação ---
+
+    function limparObservacoes() {
+        if(confirm("Limpar o campo de observações?")) {
+            document.getElementById('obsArea').value = "";
+        }
+    }
+
+    function imprimirEFechar() {
+        const form = document.getElementById('formNavegacao');
+        form.target = '_blank'; // Abre PDF em nova aba
+
+        // Remove o target após o envio para não afetar outros botões
+        setTimeout(() => { form.target = '_self'; }, 100);
+    }
+</script>
 {% endblock %}
