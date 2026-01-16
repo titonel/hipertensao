@@ -323,7 +323,7 @@ def atendimento_multidisciplinar(request, paciente_id):
         else:
             return redirect('gerar_contrarreferencia_triagem', paciente_id=paciente.id)
 
-    return render(request, 'atendimento/ficha_equipe_multi.html', {'paciente': paciente, 'idade': idade})
+    return render(request, 'atendimento/ficha_enf_aval_inicial.html', {'paciente': paciente, 'idade': idade})
 
 
 @login_required

@@ -1,0 +1,600 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-0 shadow-sm mb-4" style="border-left: 5px solid #198754 !important;">
+        <div class="card-body d-flex justify-content-between align-items-center bg-light rounded">
+            <div>
+                <h3 class="text-success fw-bold mb-0">{{ paciente.nome }}</h3>
+                <div class="text-muted">
+                    <i class="fas fa-id-card me-1"></i> CPF: {{ paciente.cpf }} | 
+                    <i class="fas fa-birthday-cake me-1"></i> {{ paciente.data_nascimento|date:"d/m/Y" }} ({{ idade }} anos) |
+                    <i class="fas fa-venus-mars me-1"></i> {{ paciente.sexo }}
+                </div>
+            </div>
+            <div>
+                <span class="badge bg-success fs-6">Consulta de Enfermagem (CASIC)</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" id="formEnfermagem">
+        {% csrf_token %}
+
+        <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active fw-bold" id="identificacao-tab" data-bs-toggle="tab" data-bs-target="#identificacao" type="button">1. Sócio-Demográfico</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold" id="saude-tab" data-bs-toggle="tab" data-bs-target="#saude" type="button">2. Saúde e Doença</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold" id="estilo-tab" data-bs-toggle="tab" data-bs-target="#estilo" type="button">3. Estilo de Vida</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold" id="moradia-tab" data-bs-toggle="tab" data-bs-target="#moradia" type="button">4. Moradia</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link fw-bold" id="exame-tab" data-bs-toggle="tab" data-bs-target="#exame" type="button">5. Exame Físico</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+
+            <div class="tab-pane fade show active" id="identificacao" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h5 class="text-success border-bottom pb-2 mb-3">Dados Complementares</h5>
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Religião</label>
+                                <select name="religiao" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="Catolica">Católica</option>
+                                    <option value="Evangelica">Evangélica</option>
+                                    <option value="Espirita">Espírita</option>
+                                    <option value="Matriz Africana">Matriz Africana</option>
+                                    <option value="Sem Religiao">Sem Religião</option>
+                                    <option value="Outras">Outras</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Estado Civil</label>
+                                <select name="estado_civil" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="Solteiro">Solteiro(a)</option>
+                                    <option value="Casado">Casado(a)</option>
+                                    <option value="Divorciado">Divorciado(a)</option>
+                                    <option value="Viuvo">Viúvo(a)</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Escolaridade</label>
+                                <select name="escolaridade" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="Analfabeto">Analfabeto</option>
+                                    <option value="Fundamental">Fundamental</option>
+                                    <option value="Medio">Médio</option>
+                                    <option value="Superior">Superior</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Fonte de Renda</label>
+                                <select name="fonte_renda" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="Aposentadoria">Aposentadoria</option>
+                                    <option value="Pensao">Pensão</option>
+                                    <option value="Ajuda">Ajuda familiares</option>
+                                    <option value="Trabalho">Trabalho</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Renda Familiar</label>
+                                <select name="renda_familiar" class="form-select">
+                                    <option value="Ate 1 SM">Até 1 SM</option>
+                                    <option value="1 a 3 SM">Entre 1 e 3 SM</option>
+                                    <option value="3 a 5 SM">Entre 3 e 5 SM</option>
+                                    <option value="Acima 5 SM">Acima de 5 SM</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Reside com</label>
+                                <select name="reside_com" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="Familiares">Familiares</option>
+                                    <option value="Amigos">Amigos</option>
+                                    <option value="Sozinho">Sozinho/a</option>
+                                    <option value="Em reclusao">Em reclusão</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Rede Familiar/Apoio</label>
+                                <select name="rede_familiar" class="form-select">
+                                    <option value="">Selecione...</option>
+                                    <option value="Sim">Sim</option>
+                                    <option value="Nao">Não</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="saude" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Queixa Principal <span class="text-danger">*</span></label>
+                            <textarea name="queixa_principal" class="form-control" rows="2" required></textarea>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0 h-100">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold text-secondary">Antecedentes Familiares</h6>
+                                        <div class="d-flex flex-wrap gap-3 mb-2">
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="af_has"><label class="form-check-label">HAS</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="af_dm"><label class="form-check-label">DM</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="af_iam"><label class="form-check-label">IAM</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="af_avc"><label class="form-check-label">AVC</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="af_alzheimer"><label class="form-check-label">Alzheimer</label></div>
+                                        </div>
+                                        <input type="text" name="af_ca" class="form-control form-control-sm mb-1" placeholder="CA (Tipo):">
+                                        <input type="text" name="af_outros" class="form-control form-control-sm" placeholder="Outros:">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card bg-light border-0 h-100">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold text-secondary">Antecedentes Pessoais</h6>
+                                        <div class="d-flex flex-wrap gap-3 mb-2">
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="ap_has"><label class="form-check-label">HAS</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="ap_dm" id="checkDiabetes" onchange="toggleDiabetes()"><label class="form-check-label">DM</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="ap_iam"><label class="form-check-label">IAM</label></div>
+                                            <div class="form-check"><input class="form-check-input" type="checkbox" name="ap_avc"><label class="form-check-label">AVC</label></div>
+                                        </div>
+                                        
+                                        <div id="divTipoDiabetes" class="d-none mb-2 p-2 bg-white rounded border">
+                                            <label class="small fw-bold">Tipo DM:</label>
+                                            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="tipo_diabetes" value="1"><label class="form-check-label">Tipo 1</label></div>
+                                            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="tipo_diabetes" value="2"><label class="form-check-label">Tipo 2</label></div>
+                                        </div>
+
+                                        <input type="text" name="ap_ca" class="form-control form-control-sm mb-1" placeholder="CA (Tipo):">
+                                        <input type="text" name="ap_outros" class="form-control form-control-sm" placeholder="Outros:">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Alergias</label>
+                                <div class="input-group">
+                                    <div class="input-group-text">
+                                        <input class="form-check-input mt-0" type="checkbox" value="sim" name="tem_alergia">
+                                        <span class="ms-2">Sim</span>
+                                    </div>
+                                    <input type="text" name="desc_alergia" class="form-control" placeholder="Quais?">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Medicamentos em uso</label>
+                                <textarea name="medicamentos_uso" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Cirurgias Prévias</label>
+                                <textarea name="cirurgias_previas" class="form-control" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="estilo" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Acomp. Nutricional</label>
+                                <select name="acomp_nutri" class="form-select">
+                                    <option value="Nao">Não</option>
+                                    <option value="Sim">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Alimentação</label>
+                                <input type="text" name="alimentacao" class="form-control" placeholder="Descrição breve">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Hidratação</label>
+                                <input type="text" name="hidratacao" class="form-control" placeholder="Litros/dia aprox.">
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card border-warning h-100">
+                                    <div class="card-header bg-warning text-dark py-1 fw-bold small">Tabagismo</div>
+                                    <div class="card-body">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" name="fumante" id="checkFumante" onchange="toggleFumante()">
+                                            <label class="form-check-label" for="checkFumante">Ativo?</label>
+                                        </div>
+                                        <div id="divFumante" class="d-none">
+                                            <div class="row g-2">
+                                                <div class="col-6"><input type="number" step="0.1" name="macos" id="inputMacos" class="form-control form-control-sm" placeholder="Maços/dia"></div>
+                                                <div class="col-6"><input type="number" name="anos_fumando" id="inputAnos" class="form-control form-control-sm" placeholder="Anos"></div>
+                                                <div class="col-12"><small class="text-danger fw-bold">Carga: <span id="displayCarga">--</span> anos-maço</small></div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">Parou há:</small>
+                                            <input type="text" name="tabagismo_parou" class="form-control form-control-sm" placeholder="Tempo ex-tabagista">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card border-info h-100">
+                                    <div class="card-header bg-info text-white py-1 fw-bold small">Etilismo</div>
+                                    <div class="card-body">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" name="etilismo">
+                                            <label class="form-check-label">Ativo?</label>
+                                        </div>
+                                        <input type="text" name="etilismo_qtd" class="form-control form-control-sm mb-2" placeholder="Quantidade/Frequência">
+                                        <small class="text-muted">Parou há:</small>
+                                        <input type="text" name="etilismo_parou" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Atividade Física</label>
+                                <div class="input-group">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox" name="ativ_fisica"></div>
+                                    <input type="text" name="ativ_fisica_tipo" class="form-control" placeholder="Tipo/Freq">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Atividades de Lazer</label>
+                                <div class="input-group">
+                                    <div class="input-group-text"><input class="form-check-input mt-0" type="checkbox" name="lazer"></div>
+                                    <input type="text" name="lazer_tipo" class="form-control" placeholder="Tipo">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Sono</label>
+                                <select name="sono" class="form-select">
+                                    <option value="Adequado">Adequado</option>
+                                    <option value="Prejudicado">Prejudicado</option>
+                                </select>
+                                <input type="text" name="sono_obs" class="form-control form-control-sm mt-1" placeholder="Obs">
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="small fw-bold">Local de dormir</label>
+                                        <select name="local_dormir" class="form-select form-select-sm">
+                                            <option value="Quarto">Quarto</option>
+                                            <option value="Sala">Sala</option>
+                                            <option value="Outros">Outros</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="small fw-bold">Dorme</label>
+                                        <select name="dorme_com" class="form-select form-select-sm">
+                                            <option value="Sozinho">Sozinho</option>
+                                            <option value="Acompanhado">Acompanhado</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="small fw-bold">Vida Sexual</label>
+                                <div class="d-flex gap-2">
+                                    <select name="vida_sexual" class="form-select form-select-sm">
+                                        <option value="Inativa">Inativa</option>
+                                        <option value="Pouco ativa">Pouco ativa</option>
+                                        <option value="Ativa">Ativa</option>
+                                    </select>
+                                    <select name="parceiros" class="form-select form-select-sm">
+                                        <option value="Unico">Único</option>
+                                        <option value="Multiplos">Múltiplos</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="small fw-bold">Eliminações Vesicais</label>
+                                <select name="elim_vesicais" class="form-select form-select-sm">
+                                    <option value="">Selecione...</option>
+                                    <option value="Adequada">Adequada</option>
+                                    <option value="Prejudicada">Prejudicada</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small fw-bold">Eliminações Intestinais</label>
+                                <select name="elim_intestinais" class="form-select form-select-sm">
+                                    <option value="">Selecione...</option>
+                                    <option value="Adequada">Adequada</option>
+                                    <option value="Prejudicada">Prejudicada</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="moradia" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Tipo</label>
+                                <select name="moradia_tipo" class="form-select form-select-sm">
+                                    <option value="Casa">Casa</option>
+                                    <option value="Apartamento">Apartamento</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Estado</label>
+                                <select name="moradia_estado" class="form-select form-select-sm">
+                                    <option value="Propria">Própria</option>
+                                    <option value="Alugada">Alugada</option>
+                                    <option value="Cedida">Cedida</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Iluminação</label>
+                                <select name="iluminacao" class="form-select form-select-sm">
+                                    <option value="Suficiente">Suficiente</option>
+                                    <option value="Insuficiente">Insuficiente</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Ventilação</label>
+                                <select name="ventilacao" class="form-select form-select-sm">
+                                    <option value="Suficiente">Suficiente</option>
+                                    <option value="Insuficiente">Insuficiente</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12"><hr class="my-1"></div>
+
+                            <div class="col-md-12">
+                                <div class="d-flex flex-wrap gap-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="escadas_ext">
+                                        <label class="form-check-label">Escadas Externas (c/ Corrimão? <input type="checkbox" name="corrimao_ext">)</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="escadas_int">
+                                        <label class="form-check-label">Escadas Internas (c/ Corrimão? <input type="checkbox" name="corrimao_int">)</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="tapetes">
+                                        <label class="form-check-label">Tapetes/Carpetes Soltos</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="quintal">
+                                        <label class="form-check-label">Quintal</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="plantas">
+                                        <label class="form-check-label">Plantas/Árvores</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="exame" role="tabpanel">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+                        <h6 class="text-success border-bottom pb-2 mb-3 fw-bold">Sinais Vitais e Antropometria</h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Peso (kg) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.1" name="peso" id="peso" class="form-control" required placeholder="00.0">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">Altura (m) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" name="altura" id="altura" class="form-control" required placeholder="0.00">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold text-muted">IMC</label>
+                                <input type="text" id="displayIMC" class="form-control bg-light fw-bold" readonly tabindex="-1">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Circunf. Abdominal (cm) <span class="text-danger">*</span></label>
+                                <input type="number" step="0.1" name="circunf" class="form-control" required>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">PA (mmHg) <span class="text-danger">*</span></label>
+                                <input type="text" name="pa" class="form-control" placeholder="Ex: 120x80" required>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">FC (bpm)</label>
+                                <input type="number" name="fc" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">FR (irpm)</label>
+                                <input type="number" name="fr" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">HGT (mg/dL)</label>
+                                <input type="number" name="hgt" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Condições de Orientação</label>
+                                <select name="orientacao" class="form-select">
+                                    <option value="Totalmente orientado">Totalmente orientado</option>
+                                    <option value="Necessita apoio">Necessita apoio</option>
+                                    <option value="Incapaz de compreender">Incapaz de compreender</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Condições de Higiene</label>
+                                <select name="higiene" class="form-select">
+                                    <option value="Adequada">Adequada</option>
+                                    <option value="Prejudicada">Prejudicada</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" name="tem_loa" id="checkLoa" onchange="toggleLoa()">
+                            <label class="form-check-label fw-bold ms-2" for="checkLoa">Possui Lesão de Órgão-Alvo (LOA)?</label>
+                        </div>
+                        <div id="divLoa" class="d-none ms-4 p-2 border rounded bg-light">
+                            <div class="row g-2">
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_coracao"><label class="form-check-label">Coração</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_cerebro"><label class="form-check-label">Cérebro</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_rins"><label class="form-check-label">Rins</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_olhos"><label class="form-check-label">Olhos</label></div></div>
+                                <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="loa_arterias"><label class="form-check-label">Artérias</label></div></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label fw-bold">Observações Finais / Conduta</label>
+                            <textarea name="obs" class="form-control" rows="3" placeholder="Síntese do atendimento..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <a href="{% url 'gerar_pedido_exames' paciente.id %}" target="_blank" 
+               id="btnPedirExames" 
+               class="btn btn-outline-dark disabled" 
+               aria-disabled="true"
+               title="Disponível apenas na última aba após preencher os dados obrigatórios">
+                <i class="fas fa-print me-2"></i>Pedir Exames
+            </a>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'atendimento_hub' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-success px-5 fw-bold">
+                    <i class="fas fa-check me-2"></i>Salvar Atendimento
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    // 1. Cálculo de IMC
+    const inputPeso = document.getElementById('peso');
+    const inputAltura = document.getElementById('altura');
+    const displayIMC = document.getElementById('displayIMC');
+
+    function calcularIMC() {
+        const peso = parseFloat(inputPeso.value) || 0;
+        const altura = parseFloat(inputAltura.value) || 0;
+        if (peso > 0 && altura > 0) {
+            const imc = peso / (altura * altura);
+            displayIMC.value = imc.toFixed(2);
+            if (imc > 30) displayIMC.style.color = '#dc3545';
+            else if (imc > 25) displayIMC.style.color = '#ffc107';
+            else displayIMC.style.color = '#198754';
+        } else {
+            displayIMC.value = '';
+        }
+    }
+    inputPeso.addEventListener('input', calcularIMC);
+    inputAltura.addEventListener('input', calcularIMC);
+
+    // 2. Cálculo de Carga Tabágica
+    const inMacos = document.getElementById('inputMacos');
+    const inAnos = document.getElementById('inputAnos');
+    const displayCarga = document.getElementById('displayCarga');
+
+    function calcCarga() {
+        const macos = parseFloat(inMacos.value) || 0;
+        const anos = parseFloat(inAnos.value) || 0;
+        if (macos > 0 && anos > 0) {
+            displayCarga.innerText = (macos * anos).toFixed(1);
+        } else {
+            displayCarga.innerText = '--';
+        }
+    }
+    inMacos.addEventListener('input', calcCarga);
+    inAnos.addEventListener('input', calcCarga);
+
+    // Toggles
+    function toggleDiabetes() {
+        const check = document.getElementById('checkDiabetes');
+        const div = document.getElementById('divTipoDiabetes');
+        div.className = check.checked ? 'd-block mb-2 p-2 bg-white rounded border' : 'd-none';
+    }
+
+    function toggleFumante() {
+        const check = document.getElementById('checkFumante');
+        const div = document.getElementById('divFumante');
+        div.className = check.checked ? 'd-block mt-2' : 'd-none';
+    }
+
+    function toggleLoa() {
+        const check = document.getElementById('checkLoa');
+        const div = document.getElementById('divLoa');
+        div.className = check.checked ? 'd-block ms-4 p-2 border rounded bg-light' : 'd-none';
+    }
+
+    // --- Lógica do Botão Pedir Exames ---
+    function updateExameButton() {
+        const btn = document.getElementById('btnPedirExames');
+        const form = document.getElementById('formEnfermagem');
+        const tabExame = document.getElementById('exame-tab');
+        
+        // Verifica se a aba 'Exame Físico' está ativa
+        const isTabExameActive = tabExame.classList.contains('active');
+        
+        // Verifica se o formulário é válido (campos required preenchidos)
+        const isValid = form.checkValidity();
+
+        if (isTabExameActive && isValid) {
+            btn.classList.remove('disabled');
+            btn.removeAttribute('aria-disabled');
+        } else {
+            btn.classList.add('disabled');
+            btn.setAttribute('aria-disabled', 'true');
+        }
+    }
+
+    // Adiciona listeners para inputs e navegação de abas
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        el.addEventListener('input', updateExameButton);
+        el.addEventListener('change', updateExameButton);
+    });
+
+    // Listener para mudança de abas (evento do Bootstrap)
+    document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', updateExameButton);
+    });
+
+    // Verifica ao carregar
+    document.addEventListener('DOMContentLoaded', updateExameButton);
+
+</script>
+{% endblock %}
