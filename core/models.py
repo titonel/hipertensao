@@ -92,13 +92,15 @@ class Usuario(AbstractUser):
 
 class Medicamento(models.Model):
     classe = models.CharField(max_length=100)
-    principio_ativo = models.CharField(max_length=100, unique=True)
+    principio_ativo = models.CharField(max_length=100) # Removido unique=True
     dose_padrao = models.CharField(max_length=50)
     nomes_comerciais = models.CharField(max_length=255, blank=True)
     ativo = models.BooleanField(default=True)
 
     class Meta:
         ordering = ['classe', 'principio_ativo']
+        # Garante que a combinação Nome + Dose seja única
+        unique_together = ('principio_ativo', 'dose_padrao')
 
     def __str__(self):
         return f"{self.principio_ativo} ({self.dose_padrao})"

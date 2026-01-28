@@ -37,4 +37,5 @@ urlpatterns = [
     path('prontuario/medico/<int:paciente_id>/', views.realizar_atendimento_medico, name='atendimento_medico'),
     path('prontuario/prescricao/<int:atendimento_id>/', views.prescricao_medica_view, name='prescricao_medica'),
     path('prescricao/imprimir/<int:prescricao_id>/', views.reimprimir_receita, name='reimprimir_receita'),
+    path('medicamentos/exportar/', views.exportar_medicamentos_csv, name='exportar_medicamentos_csv'),
 ]

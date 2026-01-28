@@ -2,6 +2,7 @@ import os
 import base64
 import requests
 import json
+import csv
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.staticfiles import finders
 from django.contrib.auth.decorators import login_required
@@ -839,3 +840,21 @@ def detalhe_paciente(request, paciente_id):
     }
 
     return render(request, 'detalhe_paciente.html', context)
+
+
+@login_required
+@admin_only
+def exportar_medicamentos_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="remume_regional.csv"'
+
+    # Escreve o BOM (Byte Order Mark) para o Excel reconhecer acentos em UTF-8
+    response.write('\ufeff'.encode('utf8'))
+    writer = csv.writer(response, delimiter=';')
+    writer.writerow(['Classe', 'Princípio Ativo', 'Dosagem', 'Nomes Comerciais', 'Status'])
+
+    medicamentos = Medicamento.objects.all().order_by('classe', 'principio_ativo')
+    for m in medicamentos:
+        status = 'Disponível' if m.ativo else 'Indisponível'
+        writer.writerow([m.classe, m.principio_ativo, m.dose_padrao, m.nomes_comerciais, status])
+    return response
