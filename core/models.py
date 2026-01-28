@@ -96,6 +96,7 @@ class Medicamento(models.Model):
     dose_padrao = models.CharField(max_length=50)
     nomes_comerciais = models.CharField(max_length=255, blank=True)
     ativo = models.BooleanField(default=True)
+    is_remume = models.BooleanField(default=False, verbose_name="Pertence ao SUS/REMUME")  # Novo campo
 
     class Meta:
         ordering = ['classe', 'principio_ativo']

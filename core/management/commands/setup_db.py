@@ -74,23 +74,17 @@ class Command(BaseCommand):
         # ---------------------------------------------------------
         # 3. Execução da Carga (Update or Create)
         # ---------------------------------------------------------
-        self.stdout.write('Sincronizando medicamentos com REMUMEs regionais...')
-
-        count = 0
+        self.stdout.write('Sincronizando medicamentos regionalizados...')
         for classe, principio, dose, nomes in meds_remume:
-            # Concatenamos a dose ao princípio ativo para o Autocomplete do Prontuário
-            nome_exibicao = f"{principio} {dose}"
 
             Medicamento.objects.update_or_create(
-                principio_ativo=nome_exibicao,
+                principio_ativo=f"{principio} {dose}",
                 defaults={
                     'classe': classe,
                     'dose_padrao': dose,
                     'nomes_comerciais': nomes,
-                    'ativo': True
+                    'ativo': True,
+                    'is_remume': True  # Indica que faz parte da REMUME
                 }
             )
-            count += 1
-
-        self.stdout.write(
-            self.style.SUCCESS(f'Concluído! {count} apresentações da REMUME Regional foram configuradas.'))
+        self.stdout.write(self.style.SUCCESS('Farmácia atualizada com indicador SUS.'))

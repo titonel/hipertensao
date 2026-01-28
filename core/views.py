@@ -846,15 +846,15 @@ def detalhe_paciente(request, paciente_id):
 @admin_only
 def exportar_medicamentos_csv(request):
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="remume_regional.csv"'
-
-    # Escreve o BOM (Byte Order Mark) para o Excel reconhecer acentos em UTF-8
+    response['Content-Disposition'] = 'attachment; filename="remume_regional_sus.csv"'
     response.write('\ufeff'.encode('utf8'))
+
     writer = csv.writer(response, delimiter=';')
-    writer.writerow(['Classe', 'Princípio Ativo', 'Dosagem', 'Nomes Comerciais', 'Status'])
+    writer.writerow(['Classe', 'Princípio Ativo', 'Dosagem', 'Nomes Comerciais', 'Status', 'SUS'])
 
     medicamentos = Medicamento.objects.all().order_by('classe', 'principio_ativo')
     for m in medicamentos:
         status = 'Disponível' if m.ativo else 'Indisponível'
-        writer.writerow([m.classe, m.principio_ativo, m.dose_padrao, m.nomes_comerciais, status])
+        sus = 'Sim' if m.is_remume else 'Não'
+        writer.writerow([m.classe, m.principio_ativo, m.dose_padrao, m.nomes_comerciais, status, sus])
     return response
