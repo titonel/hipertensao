@@ -1,0 +1,88 @@
+Classe,Princípio Ativo,Dosagem Comum,Nomes Comerciais (Ref/Similares),Disponível (SUS)
+('Diurético Tiazídico', 'Hidroclorotiazida','25mg','Clorana, Moduretic, Drenol','Sim'),
+('Diurético Tiazídico', 'Hidroclorotiazida','50mg','Clorana, Moduretic, Drenol','Sim'),
+('Diurético Tiazídico', 'Clortalidona','12.5mg','Higroton, Diurix','Sim'),
+('Diurético Tiazídico', 'Clortalidona','25mg','Higroton, Diurix','Sim'),
+('Diurético Tiazídico', 'Clortalidona','50mg','Higroton, Diurix','Sim'),
+('Diurético Tiazídico', 'Indapamida','1.5mg', 'Natrilix, Indapen, Fludex', 'Não'),
+('Diurético Tiazídico', 'Indapamida','2.5mg', 'Natrilix, Indapen, Fludex', 'Não'),
+('Diurético de Alça', 'Furosemida','40mg'; 'Lasix, Neosemid', 'Sim'),
+('Diurético de Alça', 'Furosemida','80mg'; 'Lasix, Neosemid', 'Sim'),
+('Diurético de Alça', 'Bumetanida','0.5mg'; 'Burinex', 'Não'),
+('Diurético de Alça', 'Bumetanida','1mg'; 'Burinex', 'Não'),
+('Diurético de Alça', 'Torasemida','5mg'; 'Diuver, Demadex', 'Não'),
+('Diurético de Alça', 'Torasemida','10mg'; 'Diuver, Demadex', 'Não'),
+('Diurético Poupador de Potássio', 'Espironolactona','25mg', 'Aldactone, Diaquan', 'Sim'),
+('Diurético Poupador de Potássio', 'Espironolactona','50mg', 'Aldactone, Diaquan', 'Sim'),
+('Diurético Poupador de Potássio', 'Espironolactona','100mg', 'Aldactone, Diaquan', 'Sim'),
+('Diurético Poupador de Potássio', 'Eplerenona','25mg', 'Inspra', 'Não'),
+('Diurético Poupador de Potássio', 'Eplerenona','50mg', 'Inspra', 'Não'),
+('Diurético Poupador de Potássio', 'Amilorida','5mg', 'Midamor', 'Não'),
+('Diurético Poupador de Potássio', 'Triamtereno','50mg', 'Dyrenium', 'Não'),
+('Diurético Poupador de Potássio', 'Triamtereno','100mg', 'Dyrenium', 'Não'),
+('Inibidor da ECA', 'Captopril','12.5mg', 'Capoten, Hipocatril', 'Sim'),
+('Inibidor da ECA', 'Captopril','25mg', 'Capoten, Hipocatril', 'Sim'),
+('Inibidor da ECA', 'Captopril','50mg', 'Capoten, Hipocatril', 'Sim'),
+('Inibidor da ECA', 'Enalapril','5mg', 'Renitec, Eupressin, Glioten', 'Sim'),
+('Inibidor da ECA', 'Enalapril','10mg', 'Renitec, Eupressin, Glioten', 'Sim'),
+('Inibidor da ECA', 'Enalapril','20mg', 'Renitec, Eupressin, Glioten', 'Sim'),
+('Inibidor da ECA', 'Ramipril','2.5mg;', 'Triatec, Naprix', 'Não'),
+('Inibidor da ECA', 'Ramipril','5mg', 'Triatec, Naprix', 'Não'),
+('Inibidor da ECA', 'Ramipril','10mg', 'Triatec, Naprix', 'Não'),
+('Inibidor da ECA', 'Lisinopril','5mg', 'Zestril, Prinivil', 'Não'),
+('Inibidor da ECA', 'Lisinopril','10mg', 'Zestril, Prinivil', 'Não'),
+('Inibidor da ECA', 'Lisinopril','20mg', 'Zestril, Prinivil', 'Não'),
+('Inibidor da ECA', 'Quinapril','10mg', 'Accupril, Quinapril', 'Não'),
+('Inibidor da ECA', 'Quinapril','20mg', 'Accupril, Quinapril', 'Não'),
+('Inibidor da ECA', 'Quinapril','40mg', 'Accupril, Quinapril', 'Não'),
+('Inibidor da ECA', 'Fosinopril','10mg', 'Monopril, Fosinopril', 'Não'),
+('Inibidor da ECA', 'Fosinopril','20mg', 'Monopril, Fosinopril', 'Não'),
+('Inibidor da ECA', 'Fosinopril','40mg', 'Monopril, Fosinopril', 'Não'),
+('Inibidor da ECA', 'Perindopril','4mg', 'Coversyl' , 'Não'),
+('Inibidor da ECA', 'Perindopril','5mg', 'Coversyl' , 'Não'),
+('Inibidor da ECA', 'Perindopril','8mg', 'Coversyl' , 'Não'),
+('Inibidor da ECA', 'Trandolapril','1mg', 'Mavik', 'Não'),
+('Inibidor da ECA', 'Trandolapril','2mg', 'Mavik', 'Não'),
+('Inibidor da ECA', 'Trandolapril','4mg', 'Mavik', 'Não'),
+('Bloqueador do Receptor de Angiotensina (BRA)', 'Losartana Potássica','50mg', 'Cozaar, Aradois, Corus', 'Sim'),
+('Bloqueador do Receptor de Angiotensina (BRA)', 'Losartana Potássica','100mg', 'Cozaar, Aradois, Corus', 'Sim'),
+('Bloqueador do Receptor de Angiotensina (BRA)', 'Valsartana','80mg; 160mg; 320mg', 'Diovan, Tara', 'Não'),
+('Bloqueador do Receptor de Angiotensina (BRA)', 'Valsartana','80mg; 160mg; 320mg', 'Diovan, Tara', 'Não'),
+('Bloqueador do Receptor de Angiotensina (BRA)', 'Valsartana','320mg', 'Diovan, Tara', 'Não'),
+('Bloqueador do Receptor de Angiotensina (BRA)', 'Candesartana','8mg; 16mg; 32mg,Atacand; Blopress,Não
+('Bloqueador do Receptor de Angiotensina (BRA)', 'Olmesartana','20mg; 40mg,Benicar; Olmetec,Não
+('Bloqueador do Receptor de Angiotensina (BRA)', 'Telmisartana','40mg; 80mg,Micardis,Não
+('Bloqueador de Canal de Cálcio', ',Anlodipino','5mg; 10mg,Norvasc; Cordarex; Pressat,Sim
+('Bloqueador de Canal de Cálcio', ',Nifedipino','10mg; 20mg; Retard,Adalat; Oxcord,Sim
+('Bloqueador de Canal de Cálcio', ',Verapamil','80mg; 120mg; 240mg,Dilacoron; Vasoton,Sim
+('Bloqueador de Canal de Cálcio', ',Diltiazem','30mg; 60mg; 90mg; 180mg,Cardizem; Balcor; Dilti,Não (Maioria dos estados)
+('Betabloqueador', 'Atenolol','25mg; 50mg; 100mg,Atenol; Angipress,Sim
+('Betabloqueador', 'Propranolol','10mg; 40mg; 80mg,Inderal; Propalol,Sim
+('Betabloqueador', 'Carvedilol','3.125mg; 6.25mg; 12.5mg; 25mg,Coreg; Ictus; Divelol,Sim
+('Betabloqueador', 'Metoprolol (Succinato/Tartarato)','25mg; 50mg; 100mg,Selozok; Lopressor,Sim (Geralmente Tartarato)
+('Betabloqueador', 'Bisoprolol','1.25mg; 2.5mg; 5mg; 10mg,Concor; Iccor,Não
+('Betabloqueador', 'Nebivolol','5mg,Nebilet; Neblock,Não
+('Vasodilatador Direto', 'Hidralazina','25mg; 50mg,Apresolina; Neopresol,Sim
+('Vasodilatador Direto', 'Minoxidil','10mg,Loniten,Sim (Uso restrito/Hosp)
+('Agonista Alfa Central', 'Metildopa','250mg; 500mg,Aldomet,Sim
+('Agonista Alfa Central', 'Clonidina,0.100mg; 0.150mg; 0.200mg,Atensina,Sim (Alguns estados)
+('Antiarrítmico', 'Amiodarona','100mg; 200mg,Ancoron; Atlansil,Sim
+('Antiarrítmico', 'Propafenona','150mg; 300mg,Ritmonorm,Sim
+('Antiarrítmico', 'Sotalol','120mg; 160mg,Sotacor,Sim
+('Digitálico', 'Digoxina,0.25mg,Digoxina; Lanoxin,Sim
+('Inibidor da Neprilisina e Receptor de Angiotensina (ARNI)', 'Sacubitril + Valsartana','24/26mg; 49/51mg; 97/103mg,Entresto,Não (Apenas via judicial/protocolos estaduais)
+('Inibidor SGLT2', 'Dapagliflozina','10mg,Forxiga,Sim (Protocolo Diabetes/CV)
+('Inibidor SGLT2', 'Empagliflozina','10mg; 25mg,Jardiance,Não (Em avaliação constante)
+('Inibidor dos canais If', 'Ivabradina','5mg; 7.5mg,Procoralan,Não
+('Estatina', 'Sinvastatina','10mg; 20mg; 40mg,Zocor; Sinvastacor,Sim
+('Estatina', 'Atorvastatina','10mg; 20mg; 40mg; 80mg,Lipitor; Citalor,Sim (Alto Custo/Protocolo)
+('Estatina', 'Rosuvastatina','10mg; 20mg; 40mg,Crestor; Vivacor; Rosucor,Não
+('Estatina', 'Pitavastatina','2mg; 4mg,Livalo,Não
+('Fibrato', 'Ciprofibrato','100mg,Oroxadin; Lipless,Não (Geralmente)
+('Fibrato', 'Fenofibrato','200mg; 250mg,Lipidil,Sim (Alguns estados)
+('Fibrato', 'Genfibrozila','600mg; 900mg,Lopid,Sim (Alguns estados)
+('Fibrato', 'Bezafibrato','200mg; 400mg,Cedur,Sim (Alguns estados)
+('Inibidor de Absorção de Colesterol', 'Ezetimiba','10mg,Zetia; Ezetrol,Não
+('Resina de Troca Iônica', 'Colestiramina','4g (envelope),Questran,Sim (Protocolo Específico)
+('Inibidor da PCSK9, 'Evolocumabe','140mg (Caneta),Repatha,Não (Alto custo)
+('Inibidor da PCSK9', 'Alirocumabe','75mg; 150mg (Caneta),Praluent,Não (Alto custo)
