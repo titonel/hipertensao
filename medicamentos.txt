@@ -1,3 +1,5 @@
+
+
 Classe,Princípio Ativo,Dosagem Comum,Nomes Comerciais (Ref/Similares),Disponível (SUS)
 ('Diurético Tiazídico', 'Hidroclorotiazida','25mg','Clorana, Moduretic, Drenol','Sim'),
 ('Diurético Tiazídico', 'Hidroclorotiazida','50mg','Clorana, Moduretic, Drenol','Sim'),
