@@ -9,7 +9,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
-from django.db.models import Q, Avg, Count, F, ExpressionWrapper, fields
+from django.db.models import Q, Avg, Count, F, ExpressionWrapper, fields, OuterRef, Subquery, Exists, Value, FloatField
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
@@ -191,18 +192,24 @@ def api_dashboard(request):
 @health_team
 def gestao_pacientes(request):
     termo = request.GET.get('busca')
+    # Identifica se a tela foi chamada pelo botão "Novo Usuário" do menu
+    abrir_modal = request.GET.get('novo') == 'true'
 
     if termo:
         # Filtra por Nome, CPF ou SIRESP (CROSS)
         pacientes = Paciente.objects.filter(
             Q(nome__icontains=termo) |
             Q(cpf__icontains=termo) |
-            Q(siresp__icontains=termo)  # <--- Adicionado busca por CROSS
+            Q(siresp__icontains=termo)
         ).order_by('nome')
     else:
         pacientes = Paciente.objects.all().order_by('nome')
 
-    return render(request, 'pacientes.html', {'pacientes': pacientes})
+    # Passa a variável 'abrir_modal' no contexto para o HTML
+    return render(request, 'pacientes.html', {
+        'pacientes': pacientes,
+        'abrir_modal': abrir_modal
+    })
 
 
 @login_required
@@ -211,7 +218,9 @@ def salvar_paciente(request):
     if request.method == 'POST':
         pid = request.POST.get('paciente_id')
         data = request.POST.copy()
-        if 'cpf' in data: data['cpf'] = data['cpf'].replace('.', '').replace('-', '')
+
+        if 'cpf' in data:
+            data['cpf'] = data['cpf'].replace('.', '').replace('-', '')
 
         if pid:
             instance = get_object_or_404(Paciente, id=pid)
@@ -221,12 +230,15 @@ def salvar_paciente(request):
 
         if form.is_valid():
             form.save()
-            messages.success(request, 'Paciente salvo!')
+            messages.success(request, 'Paciente salvo com sucesso!')
         else:
-            messages.error(request, f'Erro: {form.errors}')
+            # Esta é a parte que limpa o HTML e pega só o texto
+            for field, errors in form.errors.items():
+                for error in errors:
+                    # Emite uma mensagem de erro limpa para cada erro encontrado
+                    messages.error(request, error)
 
     return redirect('gestao_pacientes')
-
 
 @login_required
 @multi_only
@@ -247,83 +259,136 @@ def api_paciente(request, id):
 
 
 # --- Prontuário / Atendimento (TODOS) ---
-
 @login_required
 def atendimento_hub(request):
-    # Acesso liberado para todos os logados (Médicos, Multi, Admin)
-    paciente = None
-    erro = None
-    if request.method == 'POST':
-        termo = request.POST.get('busca_termo')
-        pacientes = Paciente.objects.filter(cpf=termo) | Paciente.objects.filter(nome__icontains=termo)
-        if pacientes.exists():
-            paciente = pacientes.first()
-        else:
-            erro = "Paciente não encontrado."
-    return render(request, 'atendimento_hub.html', {'paciente': paciente, 'erro': erro})
+    # Traz todos os pacientes ativos para preencher a lista inicial
+    pacientes = Paciente.objects.filter(ativo=True).order_by('nome')
+    return render(request, 'atendimento_hub.html', {'pacientes': pacientes})
+
+@login_required
+def atendimento_paciente(request, paciente_id):
+    # Exibe as opções de atendimento (Médico, Multi, etc.) para o paciente selecionado
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    return render(request, 'atendimento_paciente.html', {'paciente': paciente})
+
+@login_required
+def hub_opcoes_atendimento(request, paciente_id):
+    # A tela com os 4 cartões de consulta (Médico, Multi, Nutri) para o paciente escolhido
+    paciente = get_object_or_404(Paciente, id=paciente_id)
+    return render(request, 'hub_atendimento.html', {'paciente': paciente})
 
 
 @login_required
 def atendimento_multidisciplinar(request, paciente_id):
     paciente = get_object_or_404(Paciente, id=paciente_id)
     idade = calcular_idade(paciente.data_nascimento)
-    ultima_afericao = paciente.afericoes.first()
 
     if request.method == 'POST':
-        peso = request.POST.get('peso').replace(',', '.')
-        altura = request.POST.get('altura').replace(',', '.')
-        circunf = request.POST.get('circunf').replace(',', '.')
+        try:
+            # 1. Extração segura de Antropometria
+            peso_str = request.POST.get('peso', '0') or '0'
+            altura_str = request.POST.get('altura', '0') or '0'
+            circunf_str = request.POST.get('circunf', '0') or '0'
+            macos_str = request.POST.get('macos', '0') or '0'
+            anos_str = request.POST.get('anos_fumando', '0') or '0'
 
-        tem_diabetes = True if request.POST.get('diabetes') == 'on' else False
-        fumante = True if request.POST.get('fumante') == 'on' else False
+            peso = float(peso_str.replace(',', '.'))
+            altura = float(altura_str.replace(',', '.'))
+            circunf = float(circunf_str.replace(',', '.'))
+            macos = float(macos_str.replace(',', '.'))
+            anos_fumando = int(anos_str)
 
-        loa_coracao = True if request.POST.get('loa_coracao') == 'on' else False
-        loa_cerebro = True if request.POST.get('loa_cerebro') == 'on' else False
-        loa_rins = True if request.POST.get('loa_rins') == 'on' else False
-        loa_arterias = True if request.POST.get('loa_arterias') == 'on' else False
-        loa_olhos = True if request.POST.get('loa_olhos') == 'on' else False
-        tem_loa = any(
-            [loa_coracao, loa_cerebro, loa_rins, loa_arterias, loa_olhos, request.POST.get('tem_loa') == 'on'])
+            # 2. Captura dos Checkboxes e Fatores de Risco
+            tem_diabetes = request.POST.get('ap_dm') == 'on' or request.POST.get('diabetes') == 'on'
+            fumante = request.POST.get('fumante') == 'on'
 
-        AtendimentoMultidisciplinar.objects.create(
-            paciente=paciente,
-            profissional=request.user,
-            peso=peso,
-            altura=altura,
-            circunferencia_abdominal=circunf,
-            tem_diabetes=tem_diabetes,
-            tipo_diabetes=request.POST.get('tipo_diabetes'),
-            fumante=fumante,
-            macos_por_dia=float(request.POST.get('macos').replace(',', '.')) if request.POST.get('macos') else 0,
-            anos_fumando=int(request.POST.get('anos_fumando')) if request.POST.get('anos_fumando') else 0,
-            tem_lesao_orgao=tem_loa,
-            loa_coracao=loa_coracao,
-            loa_cerebro=loa_cerebro,
-            loa_rins=loa_rins,
-            loa_arterias=loa_arterias,
-            loa_olhos=loa_olhos,
-            observacoes=request.POST.get('obs')
-        )
+            loa_coracao = request.POST.get('loa_coracao') == 'on'
+            loa_cerebro = request.POST.get('loa_cerebro') == 'on'
+            loa_rins = request.POST.get('loa_rins') == 'on'
+            loa_arterias = request.POST.get('loa_arterias') == 'on'
+            loa_olhos = request.POST.get('loa_olhos') == 'on'
+            tem_loa = any(
+                [loa_coracao, loa_cerebro, loa_rins, loa_arterias, loa_olhos, request.POST.get('tem_loa') == 'on'])
 
-        eligible = False
-        if not ultima_afericao:
-            eligible = True
-        else:
-            pas = ultima_afericao.pressao_sistolica
-            pad = ultima_afericao.pressao_diastolica
-            is_estagio_2_plus = (pas >= 140) or (pad >= 90)
-            is_estagio_1 = (130 <= pas < 140) or (80 <= pad < 90)
-            has_alto_risco = tem_diabetes or tem_loa or loa_rins
+            # 3. Salvando o Atendimento Multidisciplinar
+            AtendimentoMultidisciplinar.objects.create(
+                paciente=paciente,
+                profissional=request.user,
+
+                # Dados Sócio-Demográficos e Queixa
+                religiao=request.POST.get('religiao'),
+                estado_civil=request.POST.get('estado_civil'),
+                escolaridade=request.POST.get('escolaridade'),
+                fonte_renda=request.POST.get('fonte_renda'),
+                renda_familiar=request.POST.get('renda_familiar'),
+                reside_com=request.POST.get('reside_com'),
+                rede_familiar=request.POST.get('rede_familiar'),
+                queixa_principal=request.POST.get('queixa_principal'),
+
+                # Dados Clínicos
+                peso=peso,
+                altura=altura,
+                circunferencia_abdominal=circunf,
+                tem_diabetes=tem_diabetes,
+                tipo_diabetes=request.POST.get('tipo_diabetes'),
+                fumante=fumante,
+                macos_por_dia=macos,
+                anos_fumando=anos_fumando,
+                tem_lesao_orgao=tem_loa,
+                loa_coracao=loa_coracao,
+                loa_cerebro=loa_cerebro,
+                loa_rins=loa_rins,
+                loa_arterias=loa_arterias,
+                loa_olhos=loa_olhos,
+                observacoes=request.POST.get('obs')
+            )
+
+            # 4. Captura dos Sinais Vitais (PAS, PAD, FC) e Registro na Aferição
+            pas_nova = int(request.POST.get('pa_sistolica', 0))
+            pad_nova = int(request.POST.get('pa_diastolica', 0))
+
+            fc_nova = request.POST.get('fc')
+            fc_nova = int(fc_nova) if fc_nova else None
+
+            # Calcula IMC para a aferição
+            imc_calc = float(peso) / (float(altura) ** 2) if altura > 0 else 0
+
+            Afericao.objects.create(
+                paciente=paciente,
+                usuario=request.user,
+                pressao_sistolica=pas_nova,
+                pressao_diastolica=pad_nova,
+                frequencia_cardiaca=fc_nova,
+                peso=peso,
+                altura=altura,
+                imc=imc_calc
+            )
+
+            # 5. Avaliação de Desfecho (Elegibilidade para a Linha de Cuidado)
+            eligible = False
+            is_estagio_2_plus = (pas_nova >= 140) or (pad_nova >= 90)
+            is_estagio_1 = (130 <= pas_nova < 140) or (80 <= pad_nova < 90)
+            has_alto_risco = tem_diabetes or tem_loa
 
             if is_estagio_2_plus or (is_estagio_1 and has_alto_risco):
                 eligible = True
 
-        if eligible:
-            messages.success(request, "Paciente ELEGÍVEL. Gerando Kit de Exames...")
-            return redirect('gerar_kit_exames', paciente_id=paciente.id)
-        else:
-            return redirect('gerar_contrarreferencia_triagem', paciente_id=paciente.id)
+            # 6. Redirecionamento e Feedback Visual (UX)
+            if eligible:
+                messages.success(request,
+                                 "Atendimento salvo com sucesso! O paciente é ELEGÍVEL para o AME. O Kit de Exames já pode ser impresso no prontuário.")
+            else:
+                messages.warning(request,
+                                 "Atendimento salvo com sucesso! Paciente NÃO ELEGÍVEL. A Contrarreferência para a UBS pode ser impressa no prontuário.")
 
+            # Voltamos para os detalhes do paciente (Prontuário)
+            return redirect('detalhe_paciente', paciente_id=paciente.id)
+
+        except Exception as e:
+            messages.error(request, f"Erro ao salvar o atendimento: {str(e)}")
+            return redirect('atendimento_multidisciplinar', paciente_id=paciente.id)
+
+    # Se não for POST (abertura da tela), carrega a página vazia
     return render(request, 'atendimento/ficha_enf_aval_inicial.html', {'paciente': paciente, 'idade': idade})
 
 
@@ -556,19 +621,79 @@ def gerar_receita_pdf_bytes(request, prescricao):
 # --- Monitoramento (MULTI + ADMIN) ---
 
 @login_required
-@multi_only
-def monitoramento_busca(request):
-    erro = None
-    if request.method == 'POST':
-        termo = request.POST.get('busca_termo')
-        pacientes = Paciente.objects.filter(nome__icontains=termo) | Paciente.objects.filter(
-            cpf=termo) | Paciente.objects.filter(siresp=termo)
-        if pacientes.exists():
-            return redirect('monitoramento_painel', paciente_id=pacientes.first().id)
-        else:
-            erro = "Paciente não encontrado."
-    return render(request, 'monitoramento_busca.html', {'erro': erro})
+@health_team
+def monitoramento_lista(request):
+    # Seleciona todos os pacientes ativos
+    pacientes = Paciente.objects.filter(ativo=True)
 
+    # Subqueries para verificar em qual estágio o paciente está
+    multi_exists = AtendimentoMultidisciplinar.objects.filter(paciente=OuterRef('pk'))
+    prevent_exists = AvaliacaoPrevent.objects.filter(paciente=OuterRef('pk'))
+    medico_exists = AtendimentoMedico.objects.filter(paciente=OuterRef('pk'))
+
+    # Subquery para pegar o último score prevent calculado (AHA)
+    latest_score = AvaliacaoPrevent.objects.filter(
+        paciente=OuterRef('pk')
+    ).order_by('-data_avaliacao').values('risco_10_anos')[:1]
+
+    # Anota (adiciona) esses dados virtuais na nossa query principal
+    pacientes = pacientes.annotate(
+        has_multi=Exists(multi_exists),
+        has_prevent=Exists(prevent_exists),
+        has_medico=Exists(medico_exists),
+        score_prevent=Coalesce(Subquery(latest_score), Value(0.0), output_field=FloatField())
+    )
+
+    lista_pacientes = []
+    for p in pacientes:
+        # Lógica de Estágios da Linha de Cuidado
+        if not p.has_multi:
+            estagio = "Aguardando 1ª Consulta Multi"
+            badge = "bg-secondary"
+        elif p.has_multi and not p.has_prevent:
+            estagio = "Aguardando Exames / Retorno Multi"
+            badge = "bg-warning text-dark"
+        elif p.has_prevent and not p.has_medico:
+            estagio = "Aguardando Consulta Médica"
+            badge = "bg-danger"
+        else:
+            estagio = "Acompanhamento Contínuo"
+            badge = "bg-info text-dark"
+
+        # Lógica visual do Score de Risco
+        if p.score_prevent == 0:
+            cor_risco = "bg-light text-muted border"
+            texto_risco = "N/A"
+        elif p.score_prevent < 5:
+            cor_risco = "bg-success"
+            texto_risco = f"{p.score_prevent}%"
+        elif p.score_prevent < 7.5:
+            cor_risco = "bg-warning text-dark"
+            texto_risco = f"{p.score_prevent}%"
+        elif p.score_prevent < 20:
+            cor_risco = "text-white"
+            texto_risco = f"{p.score_prevent}%"
+        else:
+            cor_risco = "bg-danger"
+            texto_risco = f"{p.score_prevent}%"
+
+        lista_pacientes.append({
+            'id': p.id,
+            'nome': p.nome,
+            'cpf': p.cpf,
+            'telefone': p.telefone,
+            'estagio': estagio,
+            'badge_estagio': badge,
+            'score_prevent': p.score_prevent,
+            'cor_risco': cor_risco,
+            'texto_risco': texto_risco,
+            'is_orange': 7.5 <= p.score_prevent < 20
+        })
+
+    # Ordenação: Maior Risco Cardiovascular primeiro
+    lista_pacientes.sort(key=lambda x: x['score_prevent'], reverse=True)
+
+    return render(request, 'monitoramento_lista.html', {'pacientes': lista_pacientes})
 
 @login_required
 @multi_only
@@ -610,6 +735,13 @@ def monitoramento_painel(request, paciente_id):
         'exames': exames_lista,
         'erro_api': erro_api
     })
+
+
+@login_required
+@health_team
+def atendimento_opcoes(request):
+    # O Menu de 3 botões (Novo Usuário, Lista, Realizar Atendimento)
+    return render(request, 'atendimento_opcoes.html')
 
 
 # --- Gestão Admin (APENAS ADMIN) ---

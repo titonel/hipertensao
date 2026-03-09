@@ -8,7 +8,7 @@
             <div>
                 <h3 class="text-success fw-bold mb-0">{{ paciente.nome }}</h3>
                 <div class="text-muted">
-                    <i class="fas fa-id-card me-1"></i> CPF: {{ paciente.cpf }} | 
+                    <i class="fas fa-id-card me-1"></i> CPF: {{ paciente.cpf }} |
                     <i class="fas fa-birthday-cake me-1"></i> {{ paciente.data_nascimento|date:"d/m/Y" }} ({{ idade }} anos) |
                     <i class="fas fa-venus-mars me-1"></i> {{ paciente.sexo }}
                 </div>
@@ -118,6 +118,12 @@
                                 </select>
                             </div>
                         </div>
+
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <button type="button" class="btn btn-primary" onclick="nextTab('saude-tab')">
+                                Avançar para Saúde e Doença <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -158,7 +164,7 @@
                                             <div class="form-check"><input class="form-check-input" type="checkbox" name="ap_iam"><label class="form-check-label">IAM</label></div>
                                             <div class="form-check"><input class="form-check-input" type="checkbox" name="ap_avc"><label class="form-check-label">AVC</label></div>
                                         </div>
-                                        
+
                                         <div id="divTipoDiabetes" class="d-none mb-2 p-2 bg-white rounded border">
                                             <label class="small fw-bold">Tipo DM:</label>
                                             <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="tipo_diabetes" value="1"><label class="form-check-label">Tipo 1</label></div>
@@ -191,6 +197,12 @@
                                 <label class="form-label fw-bold">Cirurgias Prévias</label>
                                 <textarea name="cirurgias_previas" class="form-control" rows="3"></textarea>
                             </div>
+                        </div>
+
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <button type="button" class="btn btn-primary" onclick="nextTab('estilo-tab')">
+                                Avançar para Estilo de Vida <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -329,6 +341,12 @@
                                 </select>
                             </div>
                         </div>
+
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <button type="button" class="btn btn-primary" onclick="nextTab('moradia-tab')">
+                                Avançar para Moradia <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -395,6 +413,12 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="text-end mt-4 pt-3 border-top">
+                            <button type="button" class="btn btn-primary" onclick="nextTab('exame-tab')">
+                                Avançar para Exame Físico <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -420,13 +444,17 @@
                                 <label class="form-label fw-bold">Circunf. Abdominal (cm) <span class="text-danger">*</span></label>
                                 <input type="number" step="0.1" name="circunf" class="form-control" required>
                             </div>
-                            
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold">PA (mmHg) <span class="text-danger">*</span></label>
-                                <input type="text" name="pa" class="form-control" placeholder="Ex: 120x80" required>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">PAS (mmHg) <span class="text-danger">*</span></label>
+                                <input type="number" name="pa_sistolica" class="form-control" placeholder="Ex: 120" required>
                             </div>
-                            
-                            <div class="col-md-3">
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">PAD (mmHg) <span class="text-danger">*</span></label>
+                                <input type="number" name="pa_diastolica" class="form-control" placeholder="Ex: 80" required>
+                            </div>
+
+                            <div class="col-md-2">
                                 <label class="form-label fw-bold">FC (bpm)</label>
                                 <input type="number" name="fc" class="form-control">
                             </div>
@@ -485,9 +513,9 @@
         </div>
 
         <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <a href="{% url 'gerar_pedido_exames' paciente.id %}" target="_blank" 
-               id="btnPedirExames" 
-               class="btn btn-outline-dark disabled" 
+            <a href="{% url 'gerar_pedido_exames' paciente.id %}" target="_blank"
+               id="btnPedirExames"
+               class="btn btn-outline-dark disabled"
                aria-disabled="true"
                title="Disponível apenas na última aba após preencher os dados obrigatórios">
                 <i class="fas fa-print me-2"></i>Pedir Exames
@@ -566,10 +594,10 @@
         const btn = document.getElementById('btnPedirExames');
         const form = document.getElementById('formEnfermagem');
         const tabExame = document.getElementById('exame-tab');
-        
+
         // Verifica se a aba 'Exame Físico' está ativa
         const isTabExameActive = tabExame.classList.contains('active');
-        
+
         // Verifica se o formulário é válido (campos required preenchidos)
         const isValid = form.checkValidity();
 
@@ -595,6 +623,28 @@
 
     // Verifica ao carregar
     document.addEventListener('DOMContentLoaded', updateExameButton);
+
+    // =====================================================================
+    // NOVOS SCRIPTS ADICIONADOS: TROCA DE ABAS E BLOQUEIO DA TECLA ENTER
+    // =====================================================================
+
+    // Função que é acionada pelos botões "Avançar"
+    function nextTab(tabId) {
+        // Encontra a aba desejada pelo ID e a ativa via Bootstrap
+        var nextTabEl = document.getElementById(tabId);
+        var tab = new bootstrap.Tab(nextTabEl);
+        tab.show();
+
+        // Sobe a tela suavemente para o topo da nova aba
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Impede que o usuário envie o formulário pela metade apertando a tecla "Enter" sem querer
+    document.getElementById('formEnfermagem').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+        }
+    });
 
 </script>
 {% endblock %}

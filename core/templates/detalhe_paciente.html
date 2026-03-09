@@ -14,6 +14,23 @@
             </div>
         </div>
         <div>
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-outline-dark dropdown-toggle shadow-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-print me-2"></i>Imprimir Documentos
+                </button>
+                <ul class="dropdown-menu shadow">
+                    <li>
+                        <a class="dropdown-item py-2" href="{% url 'gerar_kit_exames' paciente.id %}" target="_blank">
+                            <i class="fas fa-file-medical text-primary me-2"></i>Kit de Exames Inicial (AME)
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{% url 'gerar_contrarreferencia_triagem' paciente.id %}" target="_blank">
+                            <i class="fas fa-file-export text-danger me-2"></i>Contrarreferência p/ UBS
+                        </a>
+                    </li>
+                </ul>
+            </div>
             <div class="btn-group">
                 <button type="button" class="btn btn-success dropdown-toggle shadow-sm" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-stethoscope me-2"></i>Novo Atendimento

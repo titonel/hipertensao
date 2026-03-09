@@ -2,6 +2,15 @@
 {% load static %}
 
 {% block content %}
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i> {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-users text-primary me-2"></i>Gestão de Pacientes</h2>
     <button class="btn btn-success" onclick="abrirModalNovo()">
@@ -40,65 +49,61 @@
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Nome</th>
-                        <th>CPF</th>
-                        <th>Sexo</th>
+                        <th>Nome Completo</th>
                         <th>Idade</th>
+                        <th>Gênero</th>
+                        <th>CPF</th>
                         <th>Município</th>
-                        <th>Telefone</th>
-                        <th>Status</th>
                         <th class="text-end">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaPacientes">
                     {% for p in pacientes %}
-                    <tr class="paciente-row"
-                        data-filter="{{ p.nome|lower }} {{ p.cpf }} {{ p.siresp|default:'' }}">
+                    <tr class="paciente-row" data-filter="{{ p.nome|lower }} {{ p.cpf }} {{ p.siresp|default:'' }}">
 
                         <td class="fw-bold">
-                            <a href="{% url 'detalhe_paciente' p.id %}" class="text-decoration-none text-dark hover-link">
-                                {{ p.nome }} <i class="fas fa-external-link-alt ms-1 text-muted small" style="font-size: 0.7em;"></i>
+                            <a href="{% url 'detalhe_paciente' p.id %}" class="text-decoration-none text-dark hover-link" title="Abrir Prontuário Completo">
+                                {{ p.nome }}
+                                {% if not p.ativo %}
+                                    <span class="badge bg-secondary ms-2" style="font-size: 0.65rem;">Inativo</span>
+                                {% endif %}
                             </a>
-                            {% if p.siresp %}
-                                <div style="font-size: 0.7rem;" class="text-muted">CROSS: {{ p.siresp }}</div>
-                            {% endif %}
                         </td>
-                        <td>{{ p.cpf }}</td>
+
+                        <td>{{ p.idade }} anos</td>
+
                         <td>
                             {% if p.sexo == 'M' %}
-                                <i class="fas fa-mars text-primary" title="Masculino"></i>
+                                <i class="fas fa-mars text-primary me-1"></i> Masculino
                             {% elif p.sexo == 'F' %}
-                                <i class="fas fa-venus text-danger" title="Feminino"></i>
+                                <i class="fas fa-venus text-danger me-1"></i> Feminino
                             {% else %}
                                 -
                             {% endif %}
                         </td>
-                        <td>{{ p.idade }} anos</td>
+
+                        <td>{{ p.cpf }}</td>
+
                         <td>{{ p.municipio }}</td>
-                        <td>{{ p.telefone }}</td>
-                        <td>
-                            {% if p.ativo %}
-                                <span class="badge bg-success">Ativo</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Inativo</span>
-                            {% endif %}
-                        </td>
+
                         <td class="text-end">
-                            <a href="{% url 'atendimento_hub' %}?busca_termo={{ p.cpf }}" class="btn btn-sm btn-outline-danger me-1" title="Novo Atendimento">
-                                <i class="fas fa-heartbeat"></i>
+                            <a href="{% url 'detalhe_paciente' p.id %}" class="btn btn-sm btn-info text-white me-1 shadow-sm" title="Ver Prontuário Completo">
+                                <i class="fas fa-folder-open me-1"></i> Prontuário
                             </a>
-                            <button class="btn btn-sm btn-outline-primary" onclick="editarPaciente({{ p.id }})" title="Editar Cadastro">
+                            <button class="btn btn-sm btn-outline-secondary shadow-sm" onclick="editarPaciente({{ p.id }})" title="Editar Dados Cadastrais">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
                         </td>
+
                     </tr>
                     {% empty %}
                     <tr id="no-results">
-                        <td colspan="8" class="text-center text-muted py-4">Nenhum paciente encontrado.</td>
+                        <td colspan="6" class="text-center text-muted py-4">Nenhum paciente encontrado.</td>
                     </tr>
                     {% endfor %}
+
                     <tr id="nenhum-encontrado" style="display: none;">
-                        <td colspan="8" class="text-center text-muted py-4">
+                        <td colspan="6" class="text-center text-muted py-4">
                             <i class="fas fa-filter me-2"></i>Nenhum paciente corresponde à sua busca.
                         </td>
                     </tr>
@@ -140,7 +145,17 @@
                     <div class="row mb-3">
                         <div class="col-md-4">
                             <label class="form-label">CPF</label>
-                            <input type="text" class="form-control" name="cpf" id="cpf" maxlength="14">
+                            <input type="text"
+                                   class="form-control"
+                                   name="cpf"
+                                   id="cpf"
+                                   minlength="11"
+                                   maxlength="11"
+                                   pattern="\d{11}"
+                                   title="O CPF deve conter exatamente 11 números"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                                   placeholder="Ex: 12345678901"
+                                   required>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Sexo</label>
@@ -175,9 +190,18 @@
                                 <option value="Outros">Outros</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
+                       <div class="col-md-6">
                             <label class="form-label">Telefone</label>
-                            <input type="text" class="form-control" name="telefone" id="telefone">
+                            <input type="text"
+                                   class="form-control"
+                                   name="telefone"
+                                   id="telefone"
+                                   minlength="11"
+                                   maxlength="11"
+                                   pattern="\d{11}"
+                                   title="O telefone deve conter exatamente 11 números (DDD + 9 dígitos)"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                                   placeholder="Ex: 12988887777">
                         </div>
                     </div>
 
@@ -277,4 +301,13 @@
         text-decoration: underline !important;
     }
 </style>
+
+{% if abrir_modal %}
+<script>
+    // Quando o servidor enviar a ordem, aguarda o carregamento da tela e abre o Modal de cadastro imediatamente
+    document.addEventListener("DOMContentLoaded", function() {
+        setTimeout(abrirModalNovo, 300); // 300ms garante que o layout e o Bootstrap foram carregados
+    });
+</script>
+{% endif %}
 {% endblock %}

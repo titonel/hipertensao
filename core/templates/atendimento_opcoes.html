@@ -1,0 +1,55 @@
+{% extends 'sidebar.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="text-center mb-5">
+        <h2 class="display-6 fw-bold text-primary"><i class="fas fa-stethoscope me-2"></i>Atendimento</h2>
+        <p class="lead text-muted">Selecione a ação desejada para a linha de cuidado</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+
+        <div class="col-md-4">
+            <a href="{% url 'gestao_pacientes' %}?novo=true" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0 hover-card text-center py-5">
+                    <div class="card-body">
+                        <i class="fas fa-user-plus fa-4x text-success mb-4"></i>
+                        <h4 class="card-title fw-bold text-dark">Novo Usuário</h4>
+                        <p class="card-text text-muted">Cadastrar um novo paciente na linha de cuidado.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'gestao_pacientes' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0 hover-card text-center py-5">
+                    <div class="card-body">
+                        <i class="fas fa-users fa-4x text-primary mb-4"></i>
+                        <h4 class="card-title fw-bold text-dark">Lista de Usuários</h4>
+                        <p class="card-text text-muted">Visualizar e buscar pacientes já cadastrados.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{% url 'atendimento_hub' %}" class="text-decoration-none">
+                <div class="card h-100 shadow-sm border-0 hover-card text-center py-5">
+                    <div class="card-body">
+                        <i class="fas fa-notes-medical fa-4x text-danger mb-4"></i>
+                        <h4 class="card-title fw-bold text-dark">Realizar Atendimento</h4>
+                        <p class="card-text text-muted">Registrar consultas médicas e multidisciplinares.</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .hover-card { transition: transform 0.3s, box-shadow 0.3s; }
+    .hover-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; border: 1px solid #004587 !important; }
+</style>
+{% endblock %}

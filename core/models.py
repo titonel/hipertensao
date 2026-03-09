@@ -166,6 +166,16 @@ class AtendimentoMultidisciplinar(models.Model):
     profissional = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True)
     data_atendimento = models.DateTimeField(auto_now_add=True)
 
+    # Dados Sociais e Socio-Demográficos
+    religiao = models.CharField(max_length=50, blank=True, null=True)
+    estado_civil = models.CharField(max_length=50, blank=True, null=True)
+    escolaridade = models.CharField(max_length=50, blank=True, null=True)
+    fonte_renda = models.CharField(max_length=50, blank=True, null=True)
+    renda_familiar = models.CharField(max_length=50, blank=True, null=True)
+    reside_com = models.CharField(max_length=50, blank=True, null=True)
+    rede_familiar = models.CharField(max_length=50, blank=True, null=True)
+    queixa_principal = models.TextField(blank=True, null=True)
+
     # Antropometria
     peso = models.DecimalField(max_digits=5, decimal_places=2, verbose_name="Peso (kg)")
     altura = models.DecimalField(max_digits=3, decimal_places=2, verbose_name="Altura (m)")

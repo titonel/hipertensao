@@ -40,8 +40,8 @@
 
                 {% if user.is_superuser or user.tipo_profissional == 'ENF' or user.tipo_profissional == 'NUT' or user.tipo_profissional == 'FAR' or user.tipo_profissional == 'MED' %}
                 <li>
-                    <a href="{% url 'gestao_pacientes' %}">
-                        <i class="fas fa-users me-2"></i> Gestão de Pacientes
+                    <a href="{% url 'atendimento_opcoes' %}">
+                        <i class="fas fa-stethoscope me-2"></i> Atendimento
                     </a>
                 </li>
                 {% endif %}
@@ -54,7 +54,7 @@
 
                 {% if user.is_superuser or user.tipo_profissional == 'ENF' or user.tipo_profissional == 'NUT' or user.tipo_profissional == 'FAR' %}
                 <li>
-                    <a href="{% url 'monitoramento_busca' %}">
+                    <a href="{% url 'monitoramento_lista' %}">
                         <i class="fas fa-desktop me-2"></i> Monitoramento
                     </a>
                 </li>

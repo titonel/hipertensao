@@ -1,0 +1,70 @@
+{% extends 'sidebar.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-primary fw-bold"><i class="fas fa-tasks me-2"></i>Fila de Monitoramento</h2>
+        <p class="text-muted mb-0">Acompanhamento dos estágios e priorização por Risco CV (AHA).</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body table-responsive">
+        <table id="tabelaFila" class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Risco CV (10 Anos)</th>
+                    <th>Paciente</th>
+                    <th>Telefone</th>
+                    <th>Estágio na Linha de Cuidado</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pacientes %}
+                <tr>
+                    <td data-sort="{{ p.score_prevent }}">
+                        <span class="badge {{ p.cor_risco }} px-3 py-2" {% if p.is_orange %}style="background-color: #fd7e14;"{% endif %}>
+                            <i class="fas fa-heartbeat me-1"></i> {{ p.texto_risco }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="fw-bold text-dark">{{ p.nome }}</div>
+                        <small class="text-muted">CPF: {{ p.cpf }}</small>
+                    </td>
+                    <td>{{ p.telefone|default:"--" }}</td>
+                    <td>
+                        <span class="badge {{ p.badge_estagio }}">{{ p.estagio }}</span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'monitoramento_painel' p.id %}" class="btn btn-sm btn-outline-primary" title="Painel de Monitoramento (Exames)">
+                            <i class="fas fa-chart-bar me-1"></i> Painel LIS
+                        </a>
+                        <a href="{% url 'detalhe_paciente' p.id %}" class="btn btn-sm btn-success ms-1" title="Ir para Prontuário">
+                            <i class="fas fa-stethoscope"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        $('#tabelaFila').DataTable({
+            "language": { "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json" },
+            "pageLength": 25,
+            "order": [[ 0, "desc" ]] // Ordena nativamente pela coluna 0 (Score de Risco) decrescente
+        });
+    });
+</script>
+{% endblock %}
