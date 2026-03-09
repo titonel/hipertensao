@@ -9,6 +9,7 @@ urlpatterns = [
     path('indices/', views.dashboard_clinico, name='indices'),  # Nova View
 
     # API de Dados (Atualizada)
+    path('dashboard/', views.dashboard_clinico, name='dashboard_clinico'),
     path('api/dashboard', views.api_dashboard, name='api_dashboard'),
 
     # ... (mantenha as rotas de login, pacientes, atendimento, usuarios, medicamentos) ...
@@ -41,5 +42,7 @@ urlpatterns = [
     path('prontuario/prescricao/<int:atendimento_id>/', views.prescricao_medica_view, name='prescricao_medica'),
     path('prescricao/imprimir/<int:prescricao_id>/', views.reimprimir_receita, name='reimprimir_receita'),
     path('medicamentos/exportar/', views.exportar_medicamentos_csv, name='exportar_medicamentos_csv'),
+    path('gestao-admin/pacientes/', views.admin_pacientes, name='admin_pacientes'),
+    path('gestao-admin/pacientes/excluir/<int:paciente_id>/', views.excluir_paciente, name='excluir_paciente'),
 
 ]

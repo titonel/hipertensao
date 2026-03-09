@@ -238,7 +238,7 @@ def salvar_paciente(request):
                     # Emite uma mensagem de erro limpa para cada erro encontrado
                     messages.error(request, error)
 
-    return redirect('gestao_pacientes')
+    return redirect(request.META.get('HTTP_REFERER', 'gestao_pacientes'))
 
 @login_required
 @multi_only
@@ -990,3 +990,35 @@ def exportar_medicamentos_csv(request):
         sus = 'Sim' if m.is_remume else 'Não'
         writer.writerow([m.classe, m.principio_ativo, m.dose_padrao, m.nomes_comerciais, status, sus])
     return response
+
+
+@login_required
+@admin_only
+def admin_pacientes(request):
+    """Renderiza a lista de pacientes exclusiva para administradores"""
+    termo = request.GET.get('busca')
+    if termo:
+        pacientes = Paciente.objects.filter(
+            Q(nome__icontains=termo) | Q(cpf__icontains=termo)
+        ).order_by('nome')
+    else:
+        pacientes = Paciente.objects.all().order_by('nome')
+
+    return render(request, 'admin_pacientes.html', {'pacientes': pacientes})
+
+
+@login_required
+@admin_only
+def excluir_paciente(request, paciente_id):
+    """Exclui o paciente e todos os seus registros em cascata"""
+    if request.method == 'POST':
+        paciente = get_object_or_404(Paciente, id=paciente_id)
+        nome_paciente = paciente.nome
+
+        # O .delete() do Django disparará o CASCADE, apagando todo o prontuário vinculado
+        paciente.delete()
+
+        messages.success(request,
+                         f"SUCESSO: O paciente {nome_paciente} e todos os seus registros históricos foram excluídos permanentemente da base de dados.")
+
+    return redirect('admin_pacientes')

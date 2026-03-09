@@ -76,6 +76,25 @@
                         <i class="fas fa-chart-line me-2"></i> Índices e Métricas
                     </a>
                 </li>
+                <li class="nav-header mt-4 fw-bold text-muted small text-uppercase px-3">Administração</li>
+
+                <li>
+                    <a href="{% url 'dashboard_clinico' %}" class="{% if request.resolver_match.url_name == 'dashboard_clinico' %}active{% endif %}">
+                        <i class="fas fa-chart-line me-2"></i> Dashboard Clínico
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'admin_pacientes' %}">
+                        <i class="fas fa-user-shield me-2 text-danger"></i> Gestão de Pacientes
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'gestao_usuarios' %}" class="{% if request.resolver_match.url_name == 'gestao_usuarios' %}active{% endif %}">
+                        <i class="fas fa-user-md me-2"></i> Gestão de Usuários (Equipe)
+                    </a>
+                </li>
                 {% endif %}
 
             </ul>
